@@ -1,0 +1,9 @@
+@import "tailwindcss";
+.p-password {
+  position: static !important;
+  display: block !important;
+}
+.p-password input {
+  display: block !important;
+  width: 100% !important;
+}
