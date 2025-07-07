@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { Checkbox } from "primereact/checkbox";
 import { Button } from "primereact/button";
 import ManagementLayout from "@/components/administradorContenido";
-import FechaDefensa from "@/features/JefesDeCarrera/components/modal-fechaDefensa";
-import RegistrarEstudiante from "@/features/JefesDeCarrera/components/modal-registroEstudiante";
-import ImportarEstudiantesExcel from "@/features/JefesDeCarrera/components/importarEstudiante";
+import FechaDefensa from "@/features/Administrador/components/modal-fechaDefensa";
+import RegistrarEstudiante from "@/features/Administrador/components/modal-registroEstudiante";
+import ImportarEstudiantesExcel from "@/features/Administrador/components/importarEstudiante";
 const getDefensaEstado = (defensa) => {
   if (!defensa.fecha && !defensa.area && !defensa.caso) return "SIN_ASIGNAR";
   if (defensa.fecha && defensa.area && defensa.caso) return "ASIGNADO";

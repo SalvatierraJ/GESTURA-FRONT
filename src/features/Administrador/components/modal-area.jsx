@@ -1,4 +1,4 @@
-// src/features/JefesDeCarrera/components/modal-area.jsx
+// src/features/Administrador/components/modal-area.jsx
 import React, { useEffect, useRef, useState } from "react";
 import { Dialog } from "primereact/dialog";
 import { Button } from "primereact/button";

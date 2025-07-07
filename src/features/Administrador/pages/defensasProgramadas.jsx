@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Checkbox } from "primereact/checkbox";
 import { Button } from "primereact/button";
 import ManagementLayout from "@/components/administradorContenido";
-import ModalAsignarJurados from "@/features/JefesDeCarrera/components/modal-asignarJurado";
+import ModalAsignarJurados from "@/features/Administrador/components/modal-asignarJurado";
 
 const DefenseRow = ({ student, selected, onToggle }) => {
   const checked = selected.includes(student.id);

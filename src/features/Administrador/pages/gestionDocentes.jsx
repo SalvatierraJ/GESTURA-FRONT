@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import ManagementLayout from "@/components/administradorContenido";
-import Horario from "@/features/JefesDeCarrera/components/modal-horario";
-import Contratos from "@/features/JefesDeCarrera/components/modal-contrato";
-import NuevoDocente from "@/features/JefesDeCarrera/components/modal-nuevoDocente";
+import Horario from "@/features/Administrador/components/modal-horario";
+import Contratos from "@/features/Administrador/components/modal-contrato";
+import NuevoDocente from "@/features/Administrador/components/modal-nuevoDocente";
 const TeacherRow = ({ teacher }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{teacher.id}</td>

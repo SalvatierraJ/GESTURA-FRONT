@@ -1,6 +1,6 @@
 import ManagementLayout from "@/components/administradorContenido";
-import RegistrarSecretario from "@/features/JefesDeCarrera/components/modal-controlAcceso";
-import Permiso from "@/features/JefesDeCarrera/components/modal-Roles";
+import RegistrarSecretario from "@/features/Administrador/components/modal-controlAcceso";
+import Permiso from "@/features/Administrador/components/modal-Roles";
 import { useState } from "react";
 
 const Usuarios = ({ teacher }) => (

@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
 import ManagementLayout from "@/components/administradorContenido";
-import RegistrarCaso from "@/features/JefesDeCarrera/components/modal-casos";
-import RegistrarArea from "@/features/JefesDeCarrera/components/modal-area";
-import RegistrarCarrera from "@/features/JefesDeCarrera/components/modal-carrera";
+import RegistrarCaso from "@/features/Administrador/components/modal-casos";
+import RegistrarArea from "@/features/Administrador/components/modal-area";
+import RegistrarCarrera from "@/features/Administrador/components/modal-carrera";
 import InputBuscar from "@/components/searchInput";
 import { useCasosStore } from "@/store/casos.store";
 import { Button } from "primereact/button";

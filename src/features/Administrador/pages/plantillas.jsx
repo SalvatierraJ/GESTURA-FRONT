@@ -1,5 +1,5 @@
 import ManagementLayout from "@/components/administradorContenido";
-import SubirPlantilla from "@/features/JefesDeCarrera/components/subir_plantilla";
+import SubirPlantilla from "@/features/Administrador/components/subir_plantilla";
 const files = [
   {
     id: 1,
