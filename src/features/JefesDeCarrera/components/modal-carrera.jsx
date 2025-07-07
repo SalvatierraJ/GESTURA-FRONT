@@ -23,7 +23,7 @@ export default function ModalRegistrarCarrera({
     cargarCarreras,
     loading,
     nuevaCarrera,
-    actualizarCarrera, // función para editar en el store
+    actualizarCarrera, 
   } = useCasosStore();
 
 
@@ -63,8 +63,7 @@ export default function ModalRegistrarCarrera({
     if (!nombre.trim() || !facultad) return;
     try {
       if (modoEditar) {
-  
-        await actualizarCarrera({
+          await actualizarCarrera({
           id: carrera.id_carrera, 
           nombre_carrera: nombre,
           id_facultad: facultad,

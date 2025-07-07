@@ -4,28 +4,33 @@ import {
   fetchFacultades,
   createCarrera,
   updateCarrera,
-  updateStateCarrera
+  updateStateCarrera,
+  fetchAreasEstudio,
+  createAreaEstudio,
+  updateAreaEstudio,
+  updateStateAreaEstudio,
 } from "@/services/casos.services";
 
 export const useCasosStore = create((set) => ({
   carreras: [],
-   total: 0,
+  total: 0,
   page: 1,
   pageSize: 10,
   facultades: [],
+  areas: [],
   loading: false,
   error: null,
 
-  cargarCarreras: async (page,pageSize) => {
+  cargarCarreras: async (page, pageSize) => {
     set({ loading: true, error: null });
     try {
-      const data = await fetchCarreras(page,pageSize);
-      set({ 
+      const data = await fetchCarreras(page, pageSize);
+      set({
         carreras: data.items,
         total: data.total,
         page: data.page,
         pageSize: data.pageSize,
-        loading: false 
+        loading: false,
       });
     } catch (error) {
       set({ error, loading: false });
@@ -82,5 +87,60 @@ export const useCasosStore = create((set) => ({
     } catch (error) {
       set({ error, loading: false });
     }
-  }
+  },
+  nuevaAreaEstudio: async ({ nombre_area, carreraIds }) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await createAreaEstudio({ nombre_area, carreraIds });
+      set((state) => ({
+        areas: [...state.areas, data],
+        loading: false,
+      }));
+    } catch (error) {
+      set({ error, loading: false });
+    }
+  },
+  cargarAreasEstudio: async (page, pageSize) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await fetchAreasEstudio(page, pageSize);
+      set({
+        areas: data.items,
+        total: data.total,
+        page: data.page,
+        pageSize: data.pageSize,
+        loading: false,
+      });
+    } catch (error) {
+      set({ error, loading: false });
+    }
+  },
+  actualizarAreaEstudio: async ({ id, nombre_area, carreraIds }) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await updateAreaEstudio({ id, nombre_area, carreraIds });
+      set((state) => ({
+        areas: state.areas.map((area) =>
+          area.id === id ? { ...area, ...data } : area
+        ),
+        loading: false,
+      }));
+    } catch (error) {
+      set({ error, loading: false });
+    }
+  },
+  actualizarEstadoAreaEstudio: async ({ id, estado }) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await updateStateAreaEstudio({ id, estado });
+      set((state) => ({
+        areas: state.areas.map((area) =>
+          area.id === id ? { ...area, estado: data.estado } : area
+        ),
+        loading: false,
+      }));
+    } catch (error) {
+      set({ error, loading: false });
+    }
+  },
 }));

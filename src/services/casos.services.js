@@ -36,3 +36,32 @@ export async function fetchFacultades() {
     method: "GET",
   });
 }
+
+
+//Funciones para las areas de estudio
+export async function fetchAreasEstudio(page, pageSize) {
+  return apiFetch(`/case-study-management/areas/${page}/${pageSize}`, {
+    method: "GET",
+  });
+}
+
+export async function createAreaEstudio({ nombre_area, carreraIds }) {
+  return apiFetch("/case-study-management/crear-area", {
+    method: "POST",
+    body: JSON.stringify({ nombre_area, carreraIds }),
+  });
+}
+
+export async function updateAreaEstudio({ id, nombre_area, carreraIds }) {
+  return apiFetch(`/case-study-management/actualizar-area/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ nombre_area, carreraIds }),
+  });
+}
+
+export async function updateStateAreaEstudio({ id, estado }) {
+  return apiFetch(`/case-study-management/actualizar-estado-area/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ estado }),
+  });
+}
