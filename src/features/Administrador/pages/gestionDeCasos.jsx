@@ -8,17 +8,16 @@ import InputBuscar from "@/components/searchInput";
 import { useCasosStore } from "@/store/casos.store";
 import { Button } from "primereact/button";
 import { Paginator } from "primereact/paginator";
-import { forEach } from "jszip";
 
-const TeacherRow = ({ teacher }) => (
+const FilaCasos = ({ caso }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.id}</td>
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.firstName}</td>
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.lastName}</td>
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.specialty}</td>
+    <td className="px-4 py-3 text-sm text-gray-700">{caso.id_casoEstudio}</td>
+    <td className="px-4 py-3 text-sm text-gray-700">{caso.Nombre_Archivo}</td>
+    <td className="px-4 py-3 text-sm text-gray-700">{caso.areaName}</td>
+    <td className="px-4 py-3 text-sm text-gray-700">{caso.Tema}</td>
     <td className="px-4 py-3">
       <button className="text-xs font-semibold text-green-800 bg-green-200 px-2 py-1 rounded-full">
-        {teacher.status}
+        {caso.estado? "Activo" : "Inactivo"}
       </button>
     </td>
     <td className="px-4 py-3 text-center space-x-2">
@@ -131,6 +130,8 @@ const MainContent = () => {
     actualizarEstadoAreaEstudio,
     areas,
     cargarAreasEstudio,
+    casos,
+    cargarCasosEstudio,
     loading,
     total,
     page,
@@ -143,54 +144,39 @@ const MainContent = () => {
   const filteredAreas = areas.filter((a) =>
     (a.nombre_area || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const filteredCasos = (casos || []).filter((a) =>
+    (a.Nombre_Archivo || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const [modalAreaVisible, setModalAreaVisible] = useState(false);
   const [areaAEditar, setAreaAEditar] = useState(null);
 
   useEffect(() => {
     cargarCarreras(page, pageSize);
     cargarAreasEstudio(page, pageSize);
+    cargarCasosEstudio(page, pageSize);
   }, [page, pageSize, cargarCarreras, cargarAreasEstudio]);
 
   const onPageChange = (event) => {
     cargarCarreras(event.page + 1, event.rows);
     cargarAreasEstudio(event.page + 1, event.rows);
+    cargarCasosEstudio(event.page + 1, event.rows);
   };
-  const teachers = [
-    {
-      id: "01",
-      firstName: "hernesto",
-      lastName: "salaz",
-      specialty: "Ingeniería de software",
-      status: "Activo",
-      typeContract: "Tiempo completo",
-    },
-    {
-      id: "02",
-      firstName: "judair",
-      lastName: "salaz",
-      specialty: "Redes",
-      status: "Activo",
-      typeContract: "Medio tiempo",
-    },
-    {
-      id: "03",
-      firstName: "elmepp",
-      lastName: "salaz",
-      specialty: "Redes",
-      status: "Activo",
-      typeContract: "Tiempo completo",
-    },
-  ];
   const tabs = [
-    { key: "Casos", label: "Casos de Estudio", count: teachers.length },
-    { key: "Areas", label: "Areas", count: teachers.length },
-    { key: "Carrera", label: "Carreras", count: carreras.length },
+    { key: "Casos", label: "Casos de Estudio" },
+    { key: "Areas", label: "Areas" },
+    { key: "Carrera", label: "Carreras" },
   ];
 
   const actions = {
-    Casos: [<RegistrarCaso />],
+    Casos: [  <InputBuscar
+        key="search"
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Buscar Caso..."
+      />,<RegistrarCaso />],
     Areas: [
-       <InputBuscar
+      <InputBuscar
         key="search"
         value={searchTerm}
         onChange={setSearchTerm}
@@ -242,35 +228,48 @@ const MainContent = () => {
       actions={actions}
     >
       {activeTab === "Casos" && (
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                #
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nombres
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Codigo
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Área
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
-              </th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {teachers.map((teacher) => (
-              <TeacherRow key={teacher.id} teacher={teacher} />
-            ))}
-          </tbody>
-        </table>
+        <>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  #
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nombres
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Codigo
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Área
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredCasos.map((caso) => (
+                <FilaCasos key={caso.id_casoEstudio} caso={caso} />
+              ))}
+            </tbody>
+          </table>
+          <div className="w-full flex justify-center mt-4">
+              <Paginator
+                first={(page - 1) * pageSize}
+                rows={pageSize}
+                totalRecords={total}
+                onPageChange={onPageChange}
+                rowsPerPageOptions={[10, 25, 50]}
+                template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+              />
+            </div>
+        </>
+        
       )}
       {activeTab === "Areas" && (
         <>

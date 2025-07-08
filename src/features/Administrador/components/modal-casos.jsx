@@ -8,15 +8,9 @@ import { Calendar } from "primereact/calendar";
 import { Toast } from "primereact/toast";
 import * as pdfjsLib from "pdfjs-dist";
 import JSZip from "jszip";
+import { useCasosStore } from "@/store/casos.store";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.mjs";
-
-const AREAS = [
-  { name: "Inteligencia Artificial", code: "IA" },
-  { name: "Redes", code: "NET" },
-  { name: "Desarrollo Web", code: "WEB" },
-  { name: "Base de Datos", code: "DB" },
-];
 
 export default function RegistroDocumentoModal() {
   const [visible, setVisible] = useState(false);
@@ -24,8 +18,13 @@ export default function RegistroDocumentoModal() {
   const [documentos, setDocumentos] = useState([]);
   const [touched, setTouched] = useState(false);
   const toast = useRef(null);
+  const { areas: areasAPI } = useCasosStore();
+  const crearCasos = useCasosStore((s) => s.crearCasos);
 
-  // Extrae metadatos de un archivo PDF o DOCX
+  const areasDropdown = (areasAPI || []).map((f) => ({
+    name: f.nombre_area,
+    code: f.id_area,
+  }));
   const extractMetadata = async (file) => {
     // PDF
     if (file.type === "application/pdf") {
@@ -144,16 +143,37 @@ export default function RegistroDocumentoModal() {
       });
       return;
     }
-    // Aquí envías documentos al backend...
-    toast.current.show({
-      severity: "success",
-      summary: "Registrado",
-      detail: "Documentos registrados exitosamente",
-    });
-    setVisible(false);
-    setSelectedArea(null);
-    setDocumentos([]);
-    setTouched(false);
+    //logica de envio de documentos al backend con metadata abierta al acambio
+    const archivos = documentos.map((doc) => ({
+      file: doc.file,
+      titulo: doc.title,
+      fecha_subida:
+        doc.creationDate instanceof Date
+          ? doc.creationDate.toISOString().slice(0, 10) // yyyy-mm-dd
+          : doc.creationDate,
+      autor: doc.author,
+      tema: doc.topic,
+    }));
+    const id_area = selectedArea.code;
+
+    try {
+      await crearCasos({ id_area, archivos });
+      toast.current.show({
+        severity: "success",
+        summary: "Registrado",
+        detail: "Documentos registrados exitosamente",
+      });
+      setVisible(false);
+      setSelectedArea(null);
+      setDocumentos([]);
+      setTouched(false);
+    } catch (err) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: err.message || "Error al registrar los documentos",
+      });
+    }
   };
   const resetModal = () => {
     setSelectedArea(null);
@@ -222,7 +242,7 @@ export default function RegistroDocumentoModal() {
               </label>
               <Dropdown
                 value={selectedArea}
-                options={AREAS}
+                options={areasDropdown}
                 onChange={(e) => setSelectedArea(e.value)}
                 optionLabel="name"
                 placeholder="Seleccione un área"

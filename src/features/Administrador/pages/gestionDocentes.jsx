@@ -1,28 +1,57 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ManagementLayout from "@/components/administradorContenido";
 import Horario from "@/features/Administrador/components/modal-horario";
 import Contratos from "@/features/Administrador/components/modal-contrato";
 import NuevoDocente from "@/features/Administrador/components/modal-nuevoDocente";
-const TeacherRow = ({ teacher }) => (
+import { useDocentesStore } from "@/store/docentes.store";
+import InputBuscar from "@/components/searchInput";
+import { Paginator } from "primereact/paginator";
+const TeacherRow = ({ docente, handleEditar, actualizarEstadoDocente }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.id}</td>
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.firstName}</td>
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.lastName}</td>
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.specialty}</td>
+    <td className="px-4 py-3 text-sm text-gray-700">{docente.id_tribunal}</td>
+    <td className="px-4 py-3 text-sm text-gray-700">{docente.Nombre}</td>
+    <td className="px-4 py-3 text-sm text-gray-700">{docente.Apellido}, </td>
+    <td className="px-4 py-3 text-sm text-gray-700">
+      {(docente.areas || []).map((a) => a.nombre_area).join(", ")}
+    </td>{" "}
     <td className="px-4 py-3">
-      <button className="text-xs font-semibold text-green-800 bg-green-200 px-2 py-1 rounded-full">
-        {teacher.status}
-      </button>
+      {docente.estado == true ? (
+        <span
+          className="text-xs font-semibold text-green-800 bg-green-200 px-2 py-1 rounded-full cursor-pointer"
+          onClick={async () => {
+            await actualizarEstadoDocente({
+              id: docente.id_tribunal,
+              estado: false,
+            });
+          }}
+        >
+          Activo
+        </span>
+      ) : (
+        <span
+          className="text-xs font-semibold text-red-800 bg-red-200 px-2 py-1 rounded-full cursor-pointer"
+          onClick={async () => {
+            await actualizarEstadoDocente({
+              id: docente.id_tribunal,
+              estado: true,
+            });
+          }}
+        >
+          Inactivo
+        </span>
+      )}
     </td>
     <td className="px-4 py-3 text-center space-x-3">
-      <button className="text-blue-600 hover:text-blue-800">
+      <button
+        className="text-black hover:red-600 cursor-pointer"
+        onClick={() => handleEditar(docente)}
+      >
         <i className="fas fa-edit"></i>
       </button>
       <Horario />
     </td>
   </tr>
 );
-
 
 const TeacherContract = ({ teacher }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
@@ -31,9 +60,9 @@ const TeacherContract = ({ teacher }) => (
     <td className="px-4 py-3 text-sm text-gray-700">{teacher.lastName}</td>
     <td className="px-4 py-3 text-sm text-gray-700">{teacher.typeContract}</td>
     <td className="px-4 py-3 text-center space-x-2">
-      <button className="text-blue-600 hover:text-blue-800">
+      <span className="text-blue-600 hover:text-blue-800 cursor-pointer">
         <i className="fas fa-edit"></i>
-      </button>
+      </span>
       <Contratos />
     </td>
   </tr>
@@ -41,37 +70,67 @@ const TeacherContract = ({ teacher }) => (
 
 const MainContent = () => {
   const [activeTab, setActiveTab] = useState("docentes");
+  const {
+    cargarDocentes,
+    docentes,
+    page,
+    pageSize,
+    total,
+    loading,
+    actualizarEstadoDocente,
+  } = useDocentesStore();
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const teachers = [
-    { id: "01", firstName: "hernesto", lastName: "salaz", specialty: "Ingeniería de software", status: "Activo", typeContract: "Tiempo completo" },
-    { id: "02", firstName: "judair", lastName: "salaz", specialty: "Redes", status: "Activo", typeContract: "Medio tiempo" },
-    { id: "03", firstName: "elmepp", lastName: "salaz", specialty: "Redes", status: "Activo", typeContract: "Tiempo completo" },
-  ];
+  const [modalDocenteVisible, setModalDocenteVisible] = useState(false);
+  const [docenteAEditar, setDocenteAEditar] = useState(null);
+  const handleCrear = () => {
+    setDocenteAEditar(null);
+    setModalDocenteVisible(true);
+  };
+  const handleEditar = (docente) => {
+    setDocenteAEditar(docente);
+    setModalDocenteVisible(true);
+  };
+  useEffect(() => {
+    cargarDocentes(page, pageSize);
+  }, [page, pageSize, cargarDocentes]);
 
+  const onPageChange = (event) => {
+    cargarDocentes(event.page + 1, event.rows);
+  };
+
+  const filteredDocentes = docentes.filter((c) =>
+    (c.Nombre || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
   const tabs = [
-    { key: "docentes", label: "Docentes", count: teachers.length },
-    { key: "contratos", label: "Contratos",count:teachers.length },
+    { key: "docentes", label: "Docentes" },
+    { key: "contratos", label: "Contratos" },
   ];
 
-  const actions = [
-    <div key="search" className="relative">
-      <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-        <i className="fas fa-search"></i>
-      </span>
-      <input
-        type="text"
-        placeholder="Search"
-        className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
-      />
-    </div>,
-    <NuevoDocente />,
-    <button
-      key="jurado"
-      className="bg-white border border-red-600 text-red-600 text-sm font-medium px-4 py-2 rounded-lg hover:bg-red-50"
-    >
-      Solicitar Jurado Externo
-    </button>,
-  ];
+  const actions = {
+    docentes: [
+      <InputBuscar
+        key="search"
+        value={searchTerm}
+        onChange={setSearchTerm}
+        placeholder="Buscar Docente..."
+      />,
+      <NuevoDocente
+        visible={modalDocenteVisible}
+        setVisible={setModalDocenteVisible}
+        docenteEditar={docenteAEditar}
+        onSuccess={() => {
+          cargarDocentes(page, pageSize);
+        }}
+      />,
+      <button
+        key="jurado"
+        className="bg-white border border-red-600 text-red-600 text-sm font-medium px-4 py-2 rounded-lg hover:bg-red-50"
+      >
+        Solicitar Jurado Externo
+      </button>,
+    ],
+  };
 
   return (
     <ManagementLayout
@@ -82,34 +141,73 @@ const MainContent = () => {
       actions={actions}
     >
       {activeTab === "docentes" && (
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombres</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apellidos</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Área de Especialización</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activo Jurado</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {teachers.map((teacher) => (
-              <TeacherRow key={teacher.id} teacher={teacher} />
-            ))}
-          </tbody>
-        </table>
+        <>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  #
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nombres
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Apellidos
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Área de Especialización
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Activo Jurado
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredDocentes.map((docente) => (
+                <TeacherRow
+                  key={docente.id_tribunal}
+                  docente={docente}
+                  handleEditar={handleEditar}
+                  actualizarEstadoDocente={actualizarEstadoDocente}
+                />
+              ))}
+            </tbody>
+          </table>
+          <div className="w-full flex justify-center mt-4">
+            <Paginator
+              first={(page - 1) * pageSize}
+              rows={pageSize}
+              totalRecords={total}
+              onPageChange={onPageChange}
+              rowsPerPageOptions={[10, 25, 50]}
+              template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+            />
+          </div>
+        </>
       )}
 
       {activeTab === "contratos" && (
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombres</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apellidos</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Contrato</th>
-              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                #
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Nombres
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Apellidos
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Tipo de Contrato
+              </th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">

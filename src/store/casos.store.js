@@ -9,6 +9,8 @@ import {
   createAreaEstudio,
   updateAreaEstudio,
   updateStateAreaEstudio,
+  crearCasosEstudio,
+  fetchCasosEstudio,
 } from "@/services/casos.services";
 
 export const useCasosStore = create((set) => ({
@@ -18,6 +20,7 @@ export const useCasosStore = create((set) => ({
   pageSize: 10,
   facultades: [],
   areas: [],
+  casosEstudio: [],
   loading: false,
   error: null,
 
@@ -139,6 +142,35 @@ export const useCasosStore = create((set) => ({
         ),
         loading: false,
       }));
+    } catch (error) {
+      set({ error, loading: false });
+    }
+  },
+  crearCasos: async ({ id_area, archivos }) => {
+    set({ loading: true, error: null });
+    try {
+      const result = await crearCasosEstudio({ id_area, archivos });
+      set((state) => ({
+        casos: [...state.casos, ...(result.casos || [])],
+        loading: false,
+      }));
+      return result;
+    } catch (err) {
+      set({ error: err.message, loading: false });
+      throw err;
+    }
+  },
+  cargarCasosEstudio: async (page, pageSize) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await fetchCasosEstudio(page, pageSize);
+      set({
+        casos: data.items,
+        total: data.total,
+        page: data.page,
+        pageSize: data.pageSize,
+        loading: false,
+      });
     } catch (error) {
       set({ error, loading: false });
     }
