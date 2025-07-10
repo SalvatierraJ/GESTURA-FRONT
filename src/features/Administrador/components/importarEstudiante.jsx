@@ -39,6 +39,7 @@ export default function ImportarEstudiantesExcel({ onImport }) {
         label="Importar Excel"
         className="bg-white border border-red-600 text-red-600 text-sm font-medium px-4 py-2 rounded-lg hover:bg-red-50"
         onClick={() => setVisible(true)}
+         style={{ backgroundColor: "#e11d1d", hover: "#b91c1c", margin:"10px" }}
       />
       <Dialog
         header="Importar estudiantes desde Excel"
