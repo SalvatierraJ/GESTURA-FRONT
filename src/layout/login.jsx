@@ -64,11 +64,11 @@ const LoginForm = () => {
         <div className="w-full md:w-1/2 p-10">
           {/* Logo */}
           <div className="mb-8 flex items-center justify-center">
-            <img
+            {/* {<img
               src="/UTEPSA.png"
               alt="Universidad Tecnológica Privada de Santa Cruz"
               className="h-16"
-            />
+            />} */}
           </div>
           <form onSubmit={handleLoginLocal}>
             {/* Form Title */}
@@ -165,7 +165,7 @@ const LoginForm = () => {
         {/* Right Section */}
         <div className="hidden md:flex w-full md:w-1/2 items-center justify-center bg-gray-100 p-10 relative">
           <img
-            src="https://placehold.co/350x350?text=Secure+Login+Illustration"
+            src="/UTUV1.png"
             alt="Ilustración 3D de una mano sosteniendo un teléfono con un candado verde, icono de verificación verde y campo de contraseña"
             className="max-h-[400px]"
           />

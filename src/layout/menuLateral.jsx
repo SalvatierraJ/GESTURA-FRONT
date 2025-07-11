@@ -40,7 +40,7 @@ const Sidebar = () => {
           alt="Logo de UTEPSA"
           className="w-8 h-8 mr-2"
         />
-        <span className="text-xl font-bold text-red-600">UTEPSA</span>
+        <span className="text-xl font-bold text-red-600">UTU</span>
       </div>
       {/* Menu */}
       <nav className="flex-1 overflow-y-auto mt-4">

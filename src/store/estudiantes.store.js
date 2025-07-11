@@ -3,7 +3,7 @@ import {
   fetchEstudiantes,
   createEstudiante,
   updateEstudiante,
-  generarDefensa
+  generarDefensa,
 } from "@/services/estudiantes.services";
 export const useEstudiantesStore = create((set) => ({
   Estudiantes: [],
@@ -27,12 +27,15 @@ export const useEstudiantesStore = create((set) => ({
       set({ error, loading: false });
     }
   },
-   crearEstudiantes: async ({ estudiantes }) => {
+  crearEstudiantes: async ({ estudiantes }) => {
     set({ loading: true, error: null });
     try {
       const data = await createEstudiante({ estudiantes });
       set((state) => ({
-        estudiantes: [...state.estudiantes, ...(Array.isArray(data) ? data : [data])],
+        estudiantes: [
+          ...state.estudiantes,
+          ...(Array.isArray(data) ? data : [data]),
+        ],
         loading: false,
       }));
     } catch (error) {
@@ -53,14 +56,14 @@ export const useEstudiantesStore = create((set) => ({
       set({ error, loading: false });
     }
   },
-    generarDefensa: async (params) => {
+  generarDefensa: async (params) => {
     set({ loading: true, error: null });
     try {
       const result = await generarDefensa(params);
-      return result; 
+      return result;
     } catch (err) {
       set({ error: err.message || "Error al generar defensa", loading: false });
-      throw err; // también puedes relanzar el error si el componente lo necesita
+      throw err;
     }
   },
 }));
