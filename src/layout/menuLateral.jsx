@@ -23,33 +23,36 @@ const SidebarItem = ({ iconClass, label, to }) => {
 };
 
 const Sidebar = () => {
-  const role = useAuthStore((state) => state.role); // "Admin", "jefe", "estudiante"
+  const getAvailableModules = useAuthStore((state) => state.getAvailableModules);
+  const availableModules = getAvailableModules().map(m => m.toLowerCase());
   const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
-    navigate("/", { replace: true }); // Redirige al login
+    navigate("/", { replace: true });
   };
+
   return (
     <aside className="w-64 bg-white h-full shadow-md flex flex-col">
-      {/* Logo */}
       <div className="flex items-center h-16 px-4 border-b border-gray-200">
         <img
           src="https://placehold.co/32x32?text=U"
           alt="Logo de UTEPSA"
           className="w-8 h-8 mr-2"
         />
-        <span className="text-xl font-bold text-red-600">UTU</span>
+        <span className="text-xl font-bold text-red-600">UTEPSA</span>
       </div>
-      {/* Menu */}
       <nav className="flex-1 overflow-y-auto mt-4">
         <ul className="px-2">
           {sidebarOptions
-            .filter(
-              (item) => !item.roles || item.roles.includes(role) // Si no hay roles es section
-            )
-            .map((item, i) =>
+            .filter((item) => {
+              if (item.type === "section") return true;
+              if (item.label === "Ajustes") return true;
+              if(item.label==="Inicio") return true;
+              return availableModules.includes(item.label.toLowerCase());
+            })
+            .map((item) =>
               item.type === "section" ? (
                 <li
                   key={item.label}
@@ -68,10 +71,11 @@ const Sidebar = () => {
             )}
         </ul>
       </nav>
-
-      {/* Logout */}
       <div className="px-4 py-3 border-t border-gray-200">
-        <button className="w-full flex items-center text-gray-600 hover:text-red-600"  onClick={handleLogout}>
+        <button
+          className="w-full flex items-center text-gray-600 hover:text-red-600"
+          onClick={handleLogout}
+        >
           <i className="fas fa-sign-out-alt text-lg mr-2"></i>
           <span className="font-medium">Salir</span>
         </button>
@@ -79,4 +83,5 @@ const Sidebar = () => {
     </aside>
   );
 };
+
 export default Sidebar;

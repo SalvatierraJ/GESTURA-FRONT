@@ -31,27 +31,32 @@ const LoginForm = () => {
     });
   };
 
-  const handleLoginLocal = async (e) => {
-    e.preventDefault();
-    try {
-      const { access_token } = await login({
-        username: email,
-        password: pwd,
-      });
-      localStorage.setItem("access_token", access_token);
+const handleLoginLocal = async (e) => {
+  e.preventDefault();
+  try {
+    const { access_token } = await login({
+      username: email,
+      password: pwd,
+    });
+    localStorage.setItem("access_token", access_token);
 
-      const userProfile = await fetchProfile();
-      const userRole =
-        userProfile.rol || userProfile.role || userProfile.Rol || "estudiante";
-      setAuth(userProfile, userRole, access_token);
+    const userProfile = await fetchProfile();
+    setAuth(userProfile, access_token);
 
-      if (userRole === "Admin") navigate("/home");
-      else if (userRole === "jefe") navigate("/jefe");
-      else navigate("/estudiante");
-    } catch (err) {
-      alert("Usuario o contraseña incorrectos");
+    const roles = userProfile.roles?.map(r =>
+      (r.Nombre || "").trim().toLowerCase()
+    ) || [];
+
+    if (roles.length === 1 && roles[0] === "estudiante") {
+      navigate("/estudiante");
+    } else {
+      navigate("/home");
     }
-  };
+  } catch (err) {
+    alert("Usuario o contraseña incorrectos");
+  }
+};
+
 
   const [checked, setChecked] = useState(false);
   const [email, setEmail] = useState("");
@@ -64,11 +69,11 @@ const LoginForm = () => {
         <div className="w-full md:w-1/2 p-10">
           {/* Logo */}
           <div className="mb-8 flex items-center justify-center">
-            {/* {<img
+            {<img
               src="/UTEPSA.png"
               alt="Universidad Tecnológica Privada de Santa Cruz"
               className="h-16"
-            />} */}
+            />}
           </div>
           <form onSubmit={handleLoginLocal}>
             {/* Form Title */}
@@ -165,8 +170,8 @@ const LoginForm = () => {
         {/* Right Section */}
         <div className="hidden md:flex w-full md:w-1/2 items-center justify-center bg-gray-100 p-10 relative">
           <img
-            src="/UTUV1.png"
-            alt="Ilustración 3D de una mano sosteniendo un teléfono con un candado verde, icono de verificación verde y campo de contraseña"
+            src=".."
+            alt="UTEPSA"
             className="max-h-[400px]"
           />
           {/* Pagination Dots */}

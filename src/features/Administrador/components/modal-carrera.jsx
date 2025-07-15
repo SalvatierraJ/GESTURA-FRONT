@@ -11,6 +11,7 @@ export default function ModalRegistrarCarrera({
   setVisible,
   carrera = null,
   limpiarCarreraEditar = () => {},
+  onSuccess,
 }) {
   const [nombre, setNombre] = useState("");
   const [facultad, setFacultad] = useState(null);
@@ -23,9 +24,8 @@ export default function ModalRegistrarCarrera({
     cargarCarreras,
     loading,
     nuevaCarrera,
-    actualizarCarrera, 
+    actualizarCarrera,
   } = useCasosStore();
-
 
   useEffect(() => {
     cargarFacultades();
@@ -63,8 +63,8 @@ export default function ModalRegistrarCarrera({
     if (!nombre.trim() || !facultad) return;
     try {
       if (modoEditar) {
-          await actualizarCarrera({
-          id: carrera.id_carrera, 
+        await actualizarCarrera({
+          id: carrera.id_carrera,
           nombre_carrera: nombre,
           id_facultad: facultad,
         });
@@ -75,6 +75,8 @@ export default function ModalRegistrarCarrera({
           id_facultad: facultad,
         });
       }
+      if (onSuccess) onSuccess();
+
       toast.current?.show({
         severity: "success",
         summary: modoEditar ? "Carrera actualizada" : "Carrera registrada",

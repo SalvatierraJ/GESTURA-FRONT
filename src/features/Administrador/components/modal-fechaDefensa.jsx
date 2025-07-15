@@ -38,7 +38,7 @@ export default function ModalAsignarDefensaSorteo({
   const handleGuardar = async (e) => {
     e.preventDefault();
     if (!fechaHora) return;
-    setLoading(false);
+    setLoading(true);
     setResultados(null);
 
     timeoutRef.current = setTimeout(() => setLoading(true), 1500);
@@ -51,11 +51,12 @@ export default function ModalAsignarDefensaSorteo({
         estudianteIds,
         tipoDefensa: "Examen de grado Interna",
       });
+      console.log("DATA DEFENSA SORTEADA:", data);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      setLoading(false);
+
       setResultados(data);
+      setLoading(false);
       if (onSubmit) onSubmit(data);
-      if (onSuccess) onSuccess();
     } catch (err) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       setLoading(false);
@@ -170,7 +171,10 @@ export default function ModalAsignarDefensaSorteo({
             <Button
               label="Cerrar"
               className="mt-2 bg-[#e11d1d] text-white font-bold border-none"
-              onClick={reset}
+              onClick={() => {
+                reset();
+                if (onSuccess) onSuccess();
+              }}
             />
           </div>
         )}

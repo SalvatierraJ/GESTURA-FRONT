@@ -8,7 +8,7 @@ import InputBuscar from "@/components/searchInput";
 import { useCasosStore } from "@/store/casos.store";
 import { Button } from "primereact/button";
 import { Paginator } from "primereact/paginator";
-
+import { useAuthStore } from "@/store/authStore";
 const FilaCasos = ({ caso }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{caso.id_casoEstudio}</td>
@@ -17,7 +17,7 @@ const FilaCasos = ({ caso }) => (
     <td className="px-4 py-3 text-sm text-gray-700">{caso.Tema}</td>
     <td className="px-4 py-3">
       <button className="text-xs font-semibold text-green-800 bg-green-200 px-2 py-1 rounded-full">
-        {caso.estado? "Activo" : "Inactivo"}
+        {caso.estado ? "Activo" : "Inactivo"}
       </button>
     </td>
     <td className="px-4 py-3 text-center space-x-2">
@@ -28,7 +28,12 @@ const FilaCasos = ({ caso }) => (
   </tr>
 );
 
-const FilaAreas = ({ area, onEditar, actualizarEstadoAreaEstudio }) => (
+const FilaAreas = ({
+  area,
+  onEditar,
+  actualizarEstadoAreaEstudio,
+  cargarAreasEstudio,
+}) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{area.id_area}</td>
     <td className="px-4 py-3 text-sm text-gray-700">{area.nombre_area}</td>
@@ -44,6 +49,7 @@ const FilaAreas = ({ area, onEditar, actualizarEstadoAreaEstudio }) => (
               id: area.id_area,
               estado: false,
             });
+            cargarAreasEstudio(1, 10);
           }}
         >
           Activo
@@ -56,6 +62,7 @@ const FilaAreas = ({ area, onEditar, actualizarEstadoAreaEstudio }) => (
               id: area.id_area,
               estado: true,
             });
+            cargarAreasEstudio(1, 10);
           }}
         >
           Inactivo
@@ -75,6 +82,8 @@ const FilaCarreras = ({
   onEditar,
   actualizarEstadoCarrera,
   cargarCarreras,
+  page,
+  pageSize,
 }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{carrera.id_carrera}</td>
@@ -90,7 +99,7 @@ const FilaCarreras = ({
               id: carrera.id_carrera,
               estado: false,
             });
-            cargarCarreras();
+            cargarCarreras(page, pageSize);
           }}
         >
           Activo
@@ -103,7 +112,7 @@ const FilaCarreras = ({
               id: carrera.id_carrera,
               estado: true,
             });
-            cargarCarreras();
+            cargarCarreras(page, pageSize);
           }}
         >
           Inactivo
@@ -123,6 +132,8 @@ const MainContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalCarreraVisible, setModalCarreraVisible] = useState(false);
   const [carreraEditar, setCarreraEditar] = useState(null);
+  const roles = useAuthStore((state) => state.getRoles());
+  const isAdmin = roles.some((r) => r.Nombre === "Admin");
   const {
     carreras,
     cargarCarreras,
@@ -165,16 +176,19 @@ const MainContent = () => {
   const tabs = [
     { key: "Casos", label: "Casos de Estudio" },
     { key: "Areas", label: "Areas" },
-    { key: "Carrera", label: "Carreras" },
+     ...(isAdmin ? [{ key: "Carrera", label: "Carreras" }] : []),
   ];
 
   const actions = {
-    Casos: [  <InputBuscar
+    Casos: [
+      <InputBuscar
         key="search"
         value={searchTerm}
         onChange={setSearchTerm}
         placeholder="Buscar Caso..."
-      />,<RegistrarCaso />],
+      />,
+      <RegistrarCaso />,
+    ],
     Areas: [
       <InputBuscar
         key="search"
@@ -193,7 +207,7 @@ const MainContent = () => {
         }}
       />,
     ],
-    Carrera: [
+     ...(isAdmin && {Carrera: [
       <InputBuscar
         key="search"
         value={searchTerm}
@@ -216,7 +230,7 @@ const MainContent = () => {
           setModalCarreraVisible(true);
         }}
       />,
-    ],
+    ]}),
   };
 
   return (
@@ -259,17 +273,16 @@ const MainContent = () => {
             </tbody>
           </table>
           <div className="w-full flex justify-center mt-4">
-              <Paginator
-                first={(page - 1) * pageSize}
-                rows={pageSize}
-                totalRecords={total}
-                onPageChange={onPageChange}
-                rowsPerPageOptions={[10, 25, 50]}
-                template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-              />
-            </div>
+            <Paginator
+              first={(page - 1) * pageSize}
+              rows={pageSize}
+              totalRecords={total}
+              onPageChange={onPageChange}
+              rowsPerPageOptions={[10, 25, 50]}
+              template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+            />
+          </div>
         </>
-        
       )}
       {activeTab === "Areas" && (
         <>
@@ -313,6 +326,7 @@ const MainContent = () => {
                     setModalAreaVisible(true);
                   }}
                   actualizarEstadoAreaEstudio={actualizarEstadoAreaEstudio}
+                  cargarAreasEstudio={cargarAreasEstudio}
                 />
               ))}
             </tbody>
@@ -335,7 +349,7 @@ const MainContent = () => {
           />
         </>
       )}
-      {activeTab === "Carrera" && (
+      {activeTab === "Carrera" &&  isAdmin && (
         <div className="w-full">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -365,6 +379,8 @@ const MainContent = () => {
                   }}
                   actualizarEstadoCarrera={actualizarEstadoCarrera}
                   cargarCarreras={cargarCarreras}
+                  page={page}
+                  pageSize={pageSize}
                 />
               ))}
             </tbody>

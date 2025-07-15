@@ -1,11 +1,13 @@
+import React, { useRef } from "react";
 import ManagementLayout from "@/components/administradorContenido";
-import RegistrarSecretario from "@/features/Administrador/components/modal-controlAcceso";
+import RegistrarUsuarios from "@/features/Administrador/components/modal-controlAcceso";
 import Permiso from "@/features/Administrador/components/modal-Roles";
 import { useEffect, useState } from "react";
 import { useRolStore } from "@/store/roles.store";
 import { Paginator } from "primereact/paginator";
 import { useUserStore } from "@/store/users.store";
-const Usuarios = ({ user }) => (
+import { Button } from "primereact/button";
+const Usuarios = ({ user,abrirModalEditar}) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{user.id}</td>
     <td className="px-4 py-3 text-sm text-gray-700">
@@ -21,7 +23,7 @@ const Usuarios = ({ user }) => (
     </td>
 
     <td className="px-4 py-3 text-center space-x-2">
-      <button className="text-blue-600 hover:text-blue-800">
+      <button className="text-blue-600 hover:text-blue-800"  onClick={() => abrirModalEditar(user)}>
         <i className="fas fa-edit"></i>
       </button>
     </td>
@@ -72,7 +74,10 @@ const MainContent = () => {
     crearNuevoRol,
     actualizarRolExistente,
   } = useRolStore();
+  const modalRef = useRef();
+  const abrirModalNuevo = () => modalRef.current.openForCreate();
 
+  const abrirModalEditar = (usuario) => modalRef.current.openForEdit(usuario);
   const { loadUsers, total, page, pageSize, users } = useUserStore();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -116,7 +121,8 @@ const MainContent = () => {
           className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
         />
       </div>,
-      <RegistrarSecretario />,
+       <Button label="Registrar Usuario" onClick={abrirModalNuevo} />
+      ,
     ],
     Rol: [
       <button
@@ -173,7 +179,7 @@ const MainContent = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUser.map((user) => (
-                <Usuarios key={user.id} user={user} />
+                <Usuarios key={user.id} user={user} abrirModalEditar={abrirModalEditar} />
               ))}
             </tbody>
           </table>
@@ -187,6 +193,12 @@ const MainContent = () => {
               template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
             />
           </div>
+          <RegistrarUsuarios
+            ref={modalRef}
+            onSubmit={() => {
+              loadUsers(page,pageSize)
+            }}
+          />
         </>
       )}
 

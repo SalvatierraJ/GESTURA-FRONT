@@ -30,7 +30,7 @@ export const useUserStore = create((set) => ({
 
   updateUser: async (id, data) => {
     try {
-      const response = await updateUser(id, data);
+      const response = await updateuser(id, data);
       return response;
     } catch (err) {
       throw new Error(err.message || "Error al actualizar usuario");
@@ -39,7 +39,7 @@ export const useUserStore = create((set) => ({
 
   registerUser: async (data) => {
     try {
-      const response = await createUser(data);
+      const response = await registerUser(data);
       return response;
     } catch (err) {
       throw new Error(err.message || "Error al registrar usuario");

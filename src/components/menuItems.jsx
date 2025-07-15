@@ -3,16 +3,11 @@ export const sidebarOptions = [
     type: "section",
     label: "Dashboard",
   },
+
   {
     iconClass: "fas fa-home",
     label: "Inicio",
     to: "/home",
-    roles: ["Admin", "jefe"],
-  },
-  {
-    iconClass: "fas fa-home",
-    label: "Inicio",
-    to: "/estudiante",
     roles: ["Estudiante"],
   },
   {
@@ -25,19 +20,16 @@ export const sidebarOptions = [
     iconClass: "fas fa-briefcase",
     label: "Casos de Estudio",
     to: "/home/casos",
-    roles: ["Admin", "jefe"],
   },
   {
     iconClass: "fas fa-chalkboard-teacher",
-    label: "Gestión de Docentes",
+    label: "Gestion de Docentes",
     to: "/home/docentes",
-    roles: ["Admin", "jefe"],
   },
   {
     iconClass: "fas fa-user-graduate",
-    label: "Gestión de Estudiantes",
+    label: "Gestion de Estudiantes",
     to: "/home/estudiantes",
-    roles: ["Admin", "jefe"],
   },
   {
     iconClass: "fas fa-book-reader",
@@ -106,10 +98,5 @@ export const sidebarOptions = [
     to: "/home/ajustes",
     roles: ["Admin", "jefe"],
   },
-  {
-    iconClass: "fas fa-cog",
-    label: "Ajustes",
-    to: "/estudiante/ajustes",
-    roles: ["Estudiante"],
-  },
+
 ];

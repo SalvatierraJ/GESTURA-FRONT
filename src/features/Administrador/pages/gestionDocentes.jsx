@@ -6,7 +6,7 @@ import NuevoDocente from "@/features/Administrador/components/modal-nuevoDocente
 import { useDocentesStore } from "@/store/docentes.store";
 import InputBuscar from "@/components/searchInput";
 import { Paginator } from "primereact/paginator";
-const TeacherRow = ({ docente, handleEditar, actualizarEstadoDocente }) => (
+const TeacherRow = ({ docente, handleEditar, actualizarEstadoDocente,cargarDocentes }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{docente.id_tribunal}</td>
     <td className="px-4 py-3 text-sm text-gray-700">{docente.Nombre}</td>
@@ -23,6 +23,7 @@ const TeacherRow = ({ docente, handleEditar, actualizarEstadoDocente }) => (
               id: docente.id_tribunal,
               estado: false,
             });
+            cargarDocentes(1,10)
           }}
         >
           Activo
@@ -35,6 +36,7 @@ const TeacherRow = ({ docente, handleEditar, actualizarEstadoDocente }) => (
               id: docente.id_tribunal,
               estado: true,
             });
+            cargarDocentes(1,10)
           }}
         >
           Inactivo
@@ -172,6 +174,7 @@ const MainContent = () => {
                   docente={docente}
                   handleEditar={handleEditar}
                   actualizarEstadoDocente={actualizarEstadoDocente}
+                  cargarDocentes={cargarDocentes}
                 />
               ))}
             </tbody>

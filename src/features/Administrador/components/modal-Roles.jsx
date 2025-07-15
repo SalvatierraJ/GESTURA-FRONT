@@ -22,7 +22,8 @@ export default function ModalRolCascada({
   const [openModules, setOpenModules] = useState({});
   const [selectedCarreras, setSelectedCarreras] = useState([]);
   const toast = useRef(null);
-
+  const isEstudiante = roleName.trim().toLowerCase() === "estudiante";
+  const isEdit = !!initialData;
   const { modulos, permisos, cargarModulos, cargarPermisos } = useRolStore();
   const { carreras, cargarCarreras } = useCasosStore();
 
@@ -208,7 +209,13 @@ export default function ModalRolCascada({
                 placeholder="Seleccionar carreras"
                 optionLabel="label"
                 className="w-full"
+                disabled={isEdit && isEstudiante}
               />
+              {isEdit && isEstudiante && (
+                <small className="text-gray-500">
+                  El rol de estudiante no administra carreras.
+                </small>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
@@ -236,6 +243,19 @@ export default function ModalRolCascada({
                     )}{" "}
                     {mod.Nombre}
                   </div>
+                  {/* MOSTRAR LA DESCRIPCIÓN SOLO PARA "Mis Defensas" */}
+                  {mod.Nombre?.toLowerCase() === "mis defensas" && (
+                    <div className="mb-2 pl-8 pr-2">
+                      <div className="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-800 text-sm p-2 rounded">
+                        Este módulo está hecho solo para que los estudiantes
+                        puedan ver sus defensas.
+                        <br />
+                        <span className="font-semibold">
+                          No está pensado ni habilitado para administradores.
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {openModules[mod.Id_Modulo] && (
                     <div className="grid grid-cols-4 gap-3 pl-6">
                       {permisos

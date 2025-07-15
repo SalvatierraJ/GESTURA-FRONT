@@ -9,11 +9,14 @@ import InputBuscar from "@/components/searchInput";
 import { Paginator } from "primereact/paginator";
 import { Button } from "primereact/button";
 
+const normalizar = str => (str || '').toLowerCase().replace(/\s+/g, ' ').trim();
+
 const getUltimaDefensaPorTipo = (defensas, tipo) =>
   [...(defensas || [])]
-    .filter((d) => 
-      d.nombre_tipo_defensa &&
-      d.nombre_tipo_defensa.toLowerCase().includes(tipo)
+    .filter(
+      (d) =>
+        d.nombre_tipo_defensa &&
+        normalizar(d.nombre_tipo_defensa) === normalizar(tipo)
     )
     .sort((a, b) => new Date(b.fecha_defensa) - new Date(a.fecha_defensa))[0] ||
   null;
@@ -33,9 +36,8 @@ const DefensaCellTipo = ({
   const otraTipo = tipo === "Examen de grado Interna" ? "Examen de grado Externa" : "Examen de grado Interna";
   const defensa = getUltimaDefensaPorTipo(defensas, tipo);
   const defensaOtra = getUltimaDefensaPorTipo(defensas, otraTipo);
-
   const disabled =
-    tipo === "externa" && getDefensaEstado(defensaOtra) !== "APROBADO";
+    tipo === "Examen de grado Externa" && getDefensaEstado(defensaOtra) !== "APROBADO";
 
   const puedeCrearNueva = !defensa || getDefensaEstado(defensa) === "REPROBADO";
   const pendiente = getDefensaEstado(defensa) === "PENDIENTE";
@@ -151,7 +153,7 @@ const StudentRow = ({
       <td className="px-4 py-3 text-sm text-gray-700">{student.carrera}</td>
       <td className="px-4 py-3">
         <DefensaCellTipo
-          tipo="interna"
+          tipo="Examen de grado Interna"
           defensas={student.defensas}
           estudianteId={student.id_estudiante}
           cargarEstudiantes={cargarEstudiantes}
@@ -161,7 +163,7 @@ const StudentRow = ({
       </td>
       <td className="px-4 py-3">
         <DefensaCellTipo
-          tipo="externa"
+          tipo="Examen de grado Externa"
           defensas={student.defensas}
           estudianteId={student.id_estudiante}
           cargarEstudiantes={cargarEstudiantes}

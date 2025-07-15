@@ -22,7 +22,7 @@ function App() {
       <Route element={<PublicRoute />}>
         <Route path="/" element={<Login />} />
       </Route>
-      <Route element={<ProtectedRoute allowedRoles={["Admin", "jefe"]} />}>
+      <Route element={<ProtectedRoute/>}>
         <Route path="/home" element={<Home />}>
           <Route path="docentes" element={<Docente />} />
           <Route path="casos" element={<CasosDeEstudio />} />
