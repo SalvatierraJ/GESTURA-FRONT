@@ -13,10 +13,6 @@ export default defineConfig({
     tailwindcss(),
     viteStaticCopy({
       targets: [
-        {
-          src: "node_modules/pdfjs-dist/build/pdf.worker.js",
-          dest: "",
-        },
       ],
     }),
   ],
