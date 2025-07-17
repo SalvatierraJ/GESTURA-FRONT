@@ -7,7 +7,8 @@ import { useRolStore } from "@/store/roles.store";
 import { Paginator } from "primereact/paginator";
 import { useUserStore } from "@/store/users.store";
 import { Button } from "primereact/button";
-const Usuarios = ({ user,abrirModalEditar}) => (
+import InputBuscar from "@/components/searchInput";
+const Usuarios = ({ user, abrirModalEditar }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{user.id}</td>
     <td className="px-4 py-3 text-sm text-gray-700">
@@ -23,7 +24,10 @@ const Usuarios = ({ user,abrirModalEditar}) => (
     </td>
 
     <td className="px-4 py-3 text-center space-x-2">
-      <button className="text-blue-600 hover:text-blue-800"  onClick={() => abrirModalEditar(user)}>
+      <button
+        className="text-blue-600 hover:text-blue-800"
+        onClick={() => abrirModalEditar(user)}
+      >
         <i className="fas fa-edit"></i>
       </button>
     </td>
@@ -65,8 +69,6 @@ const MainContent = () => {
   const [activeTab, setActiveTab] = useState("Control");
   const {
     roles,
-    pagina,
-    limite,
     loading,
     error,
     cargarRoles,
@@ -74,11 +76,13 @@ const MainContent = () => {
     crearNuevoRol,
     actualizarRolExistente,
   } = useRolStore();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const modalRef = useRef();
   const abrirModalNuevo = () => modalRef.current.openForCreate();
 
   const abrirModalEditar = (usuario) => modalRef.current.openForEdit(usuario);
-  const { loadUsers, total, page, pageSize, users } = useUserStore();
+  const { loadUsers, total, users } = useUserStore();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -87,18 +91,22 @@ const MainContent = () => {
   const handleSave = async (data) => {
     if (data.id) {
       await actualizarRolExistente(data);
-      cargarRoles(pagina, limite);
+      cargarRoles(page, pageSize);
     } else {
       await crearNuevoRol(data);
-      cargarRoles(pagina, limite);
+      cargarRoles(page, pageSize);
     }
     setModalVisible(false);
     setEditingRole(null);
   };
   useEffect(() => {
-    cargarRoles(pagina, limite);
-    loadUsers(page, pageSize);
-  }, [pagina, limite, cargarRoles, page, pageSize, loadUsers]);
+    if (activeTab === "Rol") cargarRoles(page, pageSize);
+    else if (activeTab === "Control") loadUsers(page, pageSize);
+  }, [page, pageSize, cargarRoles, page, pageSize, loadUsers]);
+  useEffect(() => {
+    setPage(1);
+    setPageSize(10);
+  }, [activeTab]);
   const filteredRoles = roles.filter((c) =>
     (c.nombre || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -106,25 +114,26 @@ const MainContent = () => {
     (c.nombres || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
   const onPageChange = (event) => {
-    cargarRoles(event.page + 1, event.rows);
-    loadUsers(event.page + 1, event.rows);
+    setPage(event.page + 1);
+    setPageSize(event.rows);
   };
   const actions = {
     Control: [
-      <div key="search" className="relative">
-        <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-          <i className="fas fa-search"></i>
-        </span>
-        <input
-          type="text"
-          placeholder="Search"
-          className="pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
-        />
-      </div>,
-       <Button label="Registrar Usuario" onClick={abrirModalNuevo} />
-      ,
+      <InputBuscar
+            key="search"
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar Usuario.."
+          />,
+      <Button label="Registrar Usuario" onClick={abrirModalNuevo} />,
     ],
     Rol: [
+       <InputBuscar
+            key="search"
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Buscar Rol.."
+          />,
       <button
         onClick={() => {
           setEditingRole(null);
@@ -179,7 +188,11 @@ const MainContent = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUser.map((user) => (
-                <Usuarios key={user.id} user={user} abrirModalEditar={abrirModalEditar} />
+                <Usuarios
+                  key={user.id}
+                  user={user}
+                  abrirModalEditar={abrirModalEditar}
+                />
               ))}
             </tbody>
           </table>
@@ -196,7 +209,7 @@ const MainContent = () => {
           <RegistrarUsuarios
             ref={modalRef}
             onSubmit={() => {
-              loadUsers(page,pageSize)
+              loadUsers(page, pageSize);
             }}
           />
         </>
@@ -237,8 +250,8 @@ const MainContent = () => {
           </table>
           <div className="w-full flex justify-center mt-4">
             <Paginator
-              first={(pagina - 1) * limite}
-              rows={limite}
+              first={(page - 1) * pageSize}
+              rows={pageSize}
               totalRecords={totalPaginas}
               onPageChange={onPageChange}
               rowsPerPageOptions={[10, 25, 50]}
@@ -255,7 +268,7 @@ const MainContent = () => {
               setEditingRole(null);
             }}
             onSuccess={() => {
-              cargarRoles(pagina, limite);
+              cargarRoles(page, pageSize);
             }}
           />
         </>

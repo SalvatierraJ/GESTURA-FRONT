@@ -25,7 +25,10 @@ const FilaCasos = ({ caso, onPreview }) => (
       <button className="text-blue-600 hover:text-blue-800">
         <i className="fas fa-edit"></i>
       </button>
-      <button className="text-blue-600 hover:text-blue-800" onClick={() => onPreview(caso.url)}>
+      <button
+        className="text-blue-600 hover:text-blue-800"
+        onClick={() => onPreview(caso.url)}
+      >
         <i className="fas fa-eye"></i>
       </button>
     </td>
@@ -151,9 +154,9 @@ const MainContent = () => {
     cargarCasosEstudio,
     loading,
     total,
-    page,
-    pageSize,
   } = useCasosStore();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const filteredCarreras = carreras.filter((c) =>
     (c.nombre_carrera || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -172,15 +175,17 @@ const MainContent = () => {
     setModalVisible(true);
   };
   useEffect(() => {
-    cargarCarreras(page, pageSize);
-    cargarAreasEstudio(page, pageSize);
-    cargarCasosEstudio(page, pageSize);
+    if (activeTab === "Casos") cargarCasosEstudio(page, pageSize);
+    else if (activeTab === "Areas") cargarAreasEstudio(page, pageSize);
+    else if (activeTab === "Carrera") cargarCarreras(page, pageSize);
   }, [page, pageSize, cargarCarreras, cargarAreasEstudio]);
-
+  useEffect(() => {
+    setPage(1);
+    setPageSize(10);
+  }, [activeTab]);
   const onPageChange = (event) => {
-    cargarCarreras(event.page + 1, event.rows);
-    cargarAreasEstudio(event.page + 1, event.rows);
-    cargarCasosEstudio(event.page + 1, event.rows);
+    setPage(event.page + 1);
+    setPageSize(event.rows);
   };
   const tabs = [
     { key: "Casos", label: "Casos de Estudio" },
@@ -279,7 +284,11 @@ const MainContent = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredCasos.map((caso) => (
-                <FilaCasos key={caso.id_casoEstudio} caso={caso} onPreview={handlePreview}/>
+                <FilaCasos
+                  key={caso.id_casoEstudio}
+                  caso={caso}
+                  onPreview={handlePreview}
+                />
               ))}
             </tbody>
           </table>

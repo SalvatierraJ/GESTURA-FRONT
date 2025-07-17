@@ -65,24 +65,23 @@ const MainContent = () => {
   const [selected, setSelected] = useState([]);
   const [activeTab, setActiveTab] = useState("Interna");
   const [searchTerm, setSearchTerm] = useState("");
-  const {
-    defensasInterna,
-    page,
-    pageSize,
-    totalPages,
-    loading,
-    error,
-    cargarDefensasInterna,
-  } = useDefensasStore();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { defensasInterna, totalPages, loading, error, cargarDefensasInterna } =
+    useDefensasStore();
   useEffect(() => {
-    cargarDefensasInterna(page, pageSize, "Examen de grado Interna");
+    if (activeTab === "Interna") cargarDefensasInterna(page, pageSize, "Examen de grado Interna");
   }, [page, pageSize, cargarDefensasInterna]);
-
+  useEffect(() => {
+    setPage(1);
+    setPageSize(10);
+  }, [activeTab]);
   const filteredDefensa = defensasInterna.filter((c) =>
     (c.estudiante || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
   const onPageChange = (event) => {
-    cargarDefensasInterna(event.page + 1, event.rows);
+    setPage(event.page + 1);
+    setPageSize(event.rows);
   };
   const toggleSelect = (id_defensa) => {
     setSelected((prev) =>
