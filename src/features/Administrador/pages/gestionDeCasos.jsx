@@ -10,16 +10,45 @@ import { Button } from "primereact/button";
 import { Paginator } from "primereact/paginator";
 import { useAuthStore } from "@/store/authStore";
 import ModalDocumento from "@/features/Administrador/components/modal_Prev_PDF";
-const FilaCasos = ({ caso, onPreview }) => (
+const FilaCasos = ({
+  caso,
+  onPreview,
+  actualizarEstadoCasoEstudio,
+  cargarCasosEstudio,
+}) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{caso.id_casoEstudio}</td>
     <td className="px-4 py-3 text-sm text-gray-700">{caso.Nombre_Archivo}</td>
     <td className="px-4 py-3 text-sm text-gray-700">{caso.areaName}</td>
     <td className="px-4 py-3 text-sm text-gray-700">{caso.Tema}</td>
     <td className="px-4 py-3">
-      <button className="text-xs font-semibold text-green-800 bg-green-200 px-2 py-1 rounded-full">
-        {caso.estado ? "Activo" : "Inactivo"}
-      </button>
+      {caso.estado == true ? (
+        <span
+          className="text-xs font-semibold text-green-800 bg-green-200 px-2 py-1 rounded-full cursor-pointer"
+          onClick={async () => {
+            await actualizarEstadoCasoEstudio({
+              id: caso.id_casoEstudio,
+              estado: false,
+            });
+            cargarCasosEstudio(1, 10);
+          }}
+        >
+          Activo
+        </span>
+      ) : (
+        <span
+          className="text-xs font-semibold text-red-800 bg-red-200 px-2 py-1 rounded-full cursor-pointer"
+          onClick={async () => {
+            await actualizarEstadoCasoEstudio({
+              id: caso.id_casoEstudio,
+              estado: true,
+            });
+            cargarCasosEstudio(1, 10);
+          }}
+        >
+          Inactivo
+        </span>
+      )}
     </td>
     <td className="px-4 py-3 text-center space-x-2">
       <button className="text-blue-600 hover:text-blue-800">
@@ -148,6 +177,7 @@ const MainContent = () => {
     cargarCarreras,
     actualizarEstadoCarrera,
     actualizarEstadoAreaEstudio,
+    actualizarEstadoCasoEstudio,
     areas,
     cargarAreasEstudio,
     casos,
@@ -178,7 +208,7 @@ const MainContent = () => {
     if (activeTab === "Casos") cargarCasosEstudio(page, pageSize);
     else if (activeTab === "Areas") cargarAreasEstudio(page, pageSize);
     else if (activeTab === "Carrera") cargarCarreras(page, pageSize);
-  }, [activeTab,page, pageSize, cargarCarreras, cargarAreasEstudio]);
+  }, [activeTab, page, pageSize, cargarCarreras, cargarAreasEstudio]);
   useEffect(() => {
     setPage(1);
     setPageSize(10);
@@ -288,6 +318,8 @@ const MainContent = () => {
                   key={caso.id_casoEstudio}
                   caso={caso}
                   onPreview={handlePreview}
+                  actualizarEstadoCasoEstudio={actualizarEstadoCasoEstudio}
+                  cargarCasosEstudio={cargarCasosEstudio}
                 />
               ))}
             </tbody>
@@ -352,6 +384,7 @@ const MainContent = () => {
                   }}
                   actualizarEstadoAreaEstudio={actualizarEstadoAreaEstudio}
                   cargarAreasEstudio={cargarAreasEstudio}
+                  cargarCasosEstudio={cargarCasosEstudio}
                 />
               ))}
             </tbody>

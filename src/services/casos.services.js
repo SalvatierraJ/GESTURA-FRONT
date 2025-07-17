@@ -89,3 +89,10 @@ export async function crearCasosEstudio({ id_area, archivos }) {
     body: formData,
   });
 }
+
+export async function updateStateCasoEstudio({ id, estado }) {
+  return apiFetch(`/case-study-management/actualizar-estado-caso/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ estado }),
+  });
+}

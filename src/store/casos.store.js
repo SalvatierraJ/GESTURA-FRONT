@@ -11,6 +11,7 @@ import {
   updateStateAreaEstudio,
   crearCasosEstudio,
   fetchCasosEstudio,
+  updateStateCasoEstudio
 } from "@/services/casos.services";
 
 export const useCasosStore = create((set) => ({
@@ -79,7 +80,6 @@ export const useCasosStore = create((set) => ({
   actualizarEstadoCarrera: async ({ id, estado }) => {
     set({ loading: true, error: null });
     try {
-      console.log("Recibido:", id, estado);
       const data = await updateStateCarrera({ id, estado });
       set((state) => ({
         carreras: state.carreras.map((carrera) =>
@@ -171,6 +171,20 @@ export const useCasosStore = create((set) => ({
         pageSize: data.pageSize,
         loading: false,
       });
+    } catch (error) {
+      set({ error, loading: false });
+    }
+  },
+    actualizarEstadoCasoEstudio: async ({ id, estado }) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await updateStateCasoEstudio({ id, estado });
+      set((state) => ({
+        casosEstudio: state.casosEstudio.map((caso) =>
+          caso.id === id ? { ...caso, estado: data.estado } : caso
+        ),
+        loading: false,
+      }));
     } catch (error) {
       set({ error, loading: false });
     }
