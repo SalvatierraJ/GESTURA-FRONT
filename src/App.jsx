@@ -15,14 +15,67 @@ import Prototipo from "@/features/Administrador/components/prototipo";
 import ProtectedRoute from "@/store/authGuardRoute";
 import PublicRoute from "@/store/publicRoute";
 import "@/index.css";
+import { useState, useEffect } from "react";
+import { useAuthStore } from "@/store/authStore";
+import { fetchProfile } from "@/services/auth";
 
 function App() {
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      fetchProfile()
+        .then((profile) => {
+          setAuth(profile, token);
+          setIsAuthLoading(false);
+        })
+        .catch(() => {
+          localStorage.removeItem("access_token");
+          setIsAuthLoading(false);
+        });
+    } else {
+      setIsAuthLoading(false);
+    }
+  }, [setAuth]);
+
+  if (isAuthLoading) {
+    return (
+      <div className="w-screen h-screen flex flex-col justify-center items-center bg-white">
+        <svg
+          className="animate-spin h-10 w-10 text-red-600 mb-4"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
+          <path
+            className="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v8H4z"
+          />
+        </svg>
+        <span className="text-red-700 text-xl font-bold">
+          Cargando sesión...
+        </span>
+      </div>
+    );
+  }
+
   return (
     <Routes>
       <Route element={<PublicRoute />}>
         <Route path="/" element={<Login />} />
       </Route>
-      <Route element={<ProtectedRoute/>}>
+      <Route element={<ProtectedRoute />}>
         <Route path="/home" element={<Home />}>
           <Route path="docentes" element={<Docente />} />
           <Route path="casos" element={<CasosDeEstudio />} />

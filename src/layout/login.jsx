@@ -9,7 +9,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 
 const LoginForm = () => {
-  const { loginWithRedirect, isAuthenticated, getAccessTokenSilently } =
+  const { isLoading,loginWithRedirect, isAuthenticated, getAccessTokenSilently } =
     useAuth0();
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
