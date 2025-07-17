@@ -1,15 +1,74 @@
- import {useEffect, useMemo} from 'react';
+ import {useEffect, useMemo, useState} from 'react';
  import {useAuthStore} from '../../../store/authStore';
 
 
  function ProfileForm() {
+  const usuario_formulario = useAuthStore(state => state.user); 
+  const { updateProfile} = useAuthStore();
+  const [formValues, setFormValues] = useState({
+    nombres: '',
+    apellidos: '',
+    usuario: '',
+    correo: '',
+    contrasena: '',
+  });
+  useEffect(()=>{ 
+    if (usuario_formulario) {
+      setFormValues({
+        nombres: usuario_formulario.Persona?.Nombre || '',
+        apellidos: `${usuario_formulario.Persona?.Apellido1 || ''} ${usuario_formulario.Persona?.Apellido2 || ''}`.trim(),
+        correo: usuario_formulario.Nombre_usuario || '',
+        usuario: '', 
+        contrasena: '', 
+      });
+    }
+  }, [usuario_formulario]);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormValues(prevValues => ({
+      ...prevValues,
+      [name]: value,
+    }));
+  };
+  const handleSubmit = async (e) => {
+    e.preventDefault(); 
+    if (!usuario_formulario) return; 
+
+    const [apellido1, ...apellido2Parts] = formValues.apellidos.split(' ');
+    const apellido2 = apellido2Parts.join(' ');
+
+    const payload = {
+      Persona: {
+        Nombre: formValues.nombres,
+        Apellido1: apellido1 || '',
+        Apellido2: apellido2 || '',
+      },
+      Nombre_Usuario: formValues.correo,
+    };
+    if (formValues.contrasena && formValues.contrasena.trim() !== '') {
+      payload.Password = formValues.contrasena;
+    }
+
+    console.log('Payload que se enviará a la API:', payload);
+
+    const result = "exito";
+
+    if (result.success) {
+      alert('¡Perfil actualizado con éxito!');
+    } else {
+      alert(`Error: ${result.error || 'No se pudo actualizar el perfil.'}`);
+    }
+  };
     return (
-      <form className="flex flex-col space-y-4 flex-1 max-w-[350px]">
+      <form className="flex flex-col space-y-4 flex-1 max-w-[350px]" onSubmit={handleSubmit}>
         <div>
           <label className="block mb-1 font-medium text-gray-700 text-base">
             Nombres
           </label>
           <input
+            name="nombres"
+            value={formValues.nombres}
+            onChange={handleInputChange}
             type="text"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 text-base"
           />
@@ -19,6 +78,9 @@
             Apellidos
           </label>
           <input
+          name="apellidos"
+          value={formValues.apellidos}
+          onChange={handleInputChange}
             type="text"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 text-base"
           />
@@ -28,6 +90,9 @@
             Usuario
           </label>
           <input
+          name="usuario"
+          value={formValues.usuario}
+          onChange={handleInputChange}
             type="text"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 text-base"
           />
@@ -37,7 +102,9 @@
             Correo
           </label>
           <input
-            type="email"
+            name="correo"
+            value={formValues.correo}
+            onChange={handleInputChange}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 text-base"
           />
         </div>
@@ -46,10 +113,19 @@
             Contrasena
           </label>
           <input
+          name="contrasena"
+          value={formValues.contrasena}
+          onChange={handleInputChange}
             type="password"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-100 text-base"
           />
         </div>
+         {/* Botón de actualizar */}
+         <div className="flex flex-row justify-end mt-4">
+            <button className="bg-red-700 hover:bg-red-800 text-white px-7 py-2 rounded-full text-base font-semibold" type='submit'>
+              Actualizar
+            </button>
+          </div>
       </form>
     );
   }
@@ -62,7 +138,7 @@
       return user.roles?.flatMap((r)=> r.carreras) || [];
     });
     return (
-      <div className="w-full min-h-screen px-8 pt-8">s
+      <div className="w-full min-h-screen px-8 pt-8">
         <div className="max-w-6xl mx-auto">
           {/* Título y descripción */}
           <div>
@@ -89,13 +165,6 @@
                 className="rounded-full border-4 border-dashed border-gray-300 w-[220px] h-[220px] object-cover"
               />
             </div>
-          </div>
-
-          {/* Botón de actualizar */}
-          <div className="flex flex-row justify-end mt-4">
-            <button className="bg-red-700 hover:bg-red-800 text-white px-7 py-2 rounded-full text-base font-semibold">
-              Actualizar
-            </button>
           </div>
 
           {/* Carreras asignadas */}
