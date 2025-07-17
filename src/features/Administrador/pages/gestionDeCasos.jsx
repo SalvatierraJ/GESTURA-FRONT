@@ -10,11 +10,14 @@ import { Button } from "primereact/button";
 import { Paginator } from "primereact/paginator";
 import { useAuthStore } from "@/store/authStore";
 import ModalDocumento from "@/features/Administrador/components/modal_Prev_PDF";
+import ModalEditarCasoEstudio from "@/features/Administrador/components/modal-editar-casoEstudio";
 const FilaCasos = ({
   caso,
   onPreview,
   actualizarEstadoCasoEstudio,
   cargarCasosEstudio,
+  setModalEditarVisible,
+  setCasoEditar
 }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{caso.id_casoEstudio}</td>
@@ -51,7 +54,7 @@ const FilaCasos = ({
       )}
     </td>
     <td className="px-4 py-3 text-center space-x-2">
-      <button className="text-blue-600 hover:text-blue-800">
+      <button className="text-blue-600 hover:text-blue-800" onClick={() => {setCasoEditar(caso); setModalEditarVisible(true)}}>
         <i className="fas fa-edit"></i>
       </button>
       <button
@@ -172,6 +175,8 @@ const MainContent = () => {
   const isAdmin = roles.some((r) => r.Nombre === "Admin");
   const [modalVisible, setModalVisible] = useState(false);
   const [pdfUrl, setPdfUrl] = useState("");
+  const [modalEditarVisible, setModalEditarVisible] = useState(false);
+  const [casoEditar, setCasoEditar] = useState(null);
   const {
     carreras,
     cargarCarreras,
@@ -320,6 +325,8 @@ const MainContent = () => {
                   onPreview={handlePreview}
                   actualizarEstadoCasoEstudio={actualizarEstadoCasoEstudio}
                   cargarCasosEstudio={cargarCasosEstudio}
+                  setCasoEditar={setCasoEditar}
+                  setModalEditarVisible={setModalEditarVisible}
                 />
               ))}
             </tbody>
@@ -338,6 +345,14 @@ const MainContent = () => {
             visible={modalVisible}
             onHide={() => setModalVisible(false)}
             url={pdfUrl}
+          />
+          <ModalEditarCasoEstudio
+            visible={modalEditarVisible}
+            onHide={() => setModalEditarVisible(false)}
+            caso={casoEditar}
+            onUpdateSuccess={() => {
+              cargarCasosEstudio(page,pageSize);
+            }}
           />
         </>
       )}
