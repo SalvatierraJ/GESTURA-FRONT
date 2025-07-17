@@ -3,6 +3,7 @@ import { fetchDefensas,asignarJuradosLote,fetchJurados, agregarNotaDefensa,
   agregarAulaDefensa  } from "@/services/defensas.services";
 export const useDefensasStore = create((set) => ({
   defensasInterna: [],
+  defensasExternas:[],
   jurados: [],  
   total: 0,
   page: 1,
@@ -16,6 +17,23 @@ export const useDefensasStore = create((set) => ({
       const data = await fetchDefensas(page, pageSize, tipoDefensa);
       set({
         defensasInterna: data.items || [],
+        total: data.total || 0,
+        page: data.page || 1,
+        pageSize: data.pageSize || 10,
+        totalPages: data.totalPages || 1,
+        tipoDefensa,
+        loading: false,
+      });
+    } catch (error) {
+      set({ error, loading: false });
+    }
+  },
+  cargarDefensasExternas: async (page, pageSize, tipoDefensa) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await fetchDefensas(page, pageSize, tipoDefensa);
+      set({
+        defensasExternas: data.items || [],
         total: data.total || 0,
         page: data.page || 1,
         pageSize: data.pageSize || 10,
