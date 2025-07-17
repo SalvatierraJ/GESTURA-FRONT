@@ -20,6 +20,8 @@ export default function RegistroDocumentoModal() {
   const toast = useRef(null);
   const { areas, cargarAreasEstudio } = useCasosStore();
   const crearCasos = useCasosStore((s) => s.crearCasos);
+  const [saving, setSaving] = useState(false);
+
   const fileUploadRef = useRef(null);
   const abrirModal = () => {
     cargarAreasEstudio(1, 100);
@@ -269,12 +271,22 @@ export default function RegistroDocumentoModal() {
               </div>
             </div>
           ) : (
-            <div className="px-10 pt-7 pb-5">
+            <div className="px-10 pt-7 pb-5 relative">
+              {saving && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50">
+                  <i className="pi pi-spin pi-spinner text-3xl text-[#e11d1d] mr-3" />
+                  <span className="text-[#e11d1d] text-lg font-semibold">
+                    Guardando documentos...
+                  </span>
+                </div>
+              )}
               <form
                 className="flex flex-col gap-7"
-                onSubmit={(e) => {
+                onSubmit={async (e) => {
                   e.preventDefault();
-                  onRegister();
+                  setSaving(true);
+                  await onRegister();
+                  setSaving(false);
                 }}
               >
                 {/* Área */}
@@ -291,6 +303,7 @@ export default function RegistroDocumentoModal() {
                     className="w-full border border-black rounded focus:ring-2 focus:ring-[#e11d1d]"
                     style={{ color: "#e11d1d" }}
                     panelClassName="bg-white border-black"
+                    disabled={saving}
                   />
                   {touched && !selectedArea && (
                     <small className="text-[#e11d1d]">
@@ -327,6 +340,7 @@ export default function RegistroDocumentoModal() {
                         "p-button-outlined bg-white border border-[#e11d1d] text-[#e11d1d] hover:bg-[#e11d1d] hover:text-white",
                     }}
                     headerTemplate={customHeaderTemplate}
+                    disabled={saving}
                   />
                   <div className="text-xs text-gray-400 mt-1">
                     (PDF o Word, máximo 5MB cada uno)
@@ -361,6 +375,7 @@ export default function RegistroDocumentoModal() {
                                 updateDocumento(i, "title", e.target.value)
                               }
                               className="w-full border border-black rounded"
+                              disabled={saving}
                             />
                             {touched && !doc.title.trim() && (
                               <small className="text-[#e11d1d]">
@@ -379,6 +394,7 @@ export default function RegistroDocumentoModal() {
                                 updateDocumento(i, "author", e.target.value)
                               }
                               className="w-full border border-black rounded"
+                              disabled={saving}
                             />
                             {touched && !doc.author.trim() && (
                               <small className="text-[#e11d1d]">
@@ -397,6 +413,7 @@ export default function RegistroDocumentoModal() {
                                 updateDocumento(i, "topic", e.target.value)
                               }
                               className="w-full border border-black rounded"
+                              disabled={saving}
                             />
                             {touched && !doc.topic.trim() && (
                               <small className="text-[#e11d1d]">
@@ -418,6 +435,7 @@ export default function RegistroDocumentoModal() {
                               dateFormat="yy-mm-dd"
                               showIcon
                               className="w-full border border-black rounded"
+                              disabled={saving}
                             />
                             {touched && !doc.creationDate && (
                               <small className="text-[#e11d1d]">
@@ -442,6 +460,7 @@ export default function RegistroDocumentoModal() {
                     style={{
                       color: "#e11d1d",
                     }}
+                    disabled={saving}
                   />
                   <Button
                     type="submit"
@@ -453,6 +472,7 @@ export default function RegistroDocumentoModal() {
                       color: "#fff",
                       boxShadow: "0 2px 12px -2px #e11d1d44",
                     }}
+                    disabled={saving}
                   />
                 </div>
               </form>

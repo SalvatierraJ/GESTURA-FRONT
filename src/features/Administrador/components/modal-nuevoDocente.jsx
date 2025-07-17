@@ -13,6 +13,8 @@ export default function ModalRegistrarDocente({
   docenteEditar = null,
   onSuccess,
 }) {
+  const [saving, setSaving] = useState(false);
+
   const { nuevoDocente, actualizarDocente } = useDocentesStore();
   const { areas, cargarAreasEstudio } = useCasosStore();
 
@@ -209,151 +211,177 @@ export default function ModalRegistrarDocente({
         contentClassName="bg-white rounded-b-2xl p-0"
         className="rounded-2xl"
       >
-        <form
-          className="px-7 pt-6 pb-3 flex flex-col gap-5"
-          onSubmit={handleSubmit}
-        >
-          {/* NOMBRE */}
-          <div>
-            <label className="block text-black font-semibold mb-1">
-              Nombre <span className="text-[#e11d1d]">*</span>
-            </label>
-            <InputText
-              value={form.nombre}
-              onChange={(e) => handleInput("nombre", e.target.value)}
-              className={`w-full border-black rounded ${
-                errors.nombre ? "p-invalid" : ""
-              }`}
-              onBlur={() => setTouched((t) => ({ ...t, nombre: true }))}
-              autoFocus
-              placeholder="Nombre(s)"
-            />
-            {errors.nombre && (
-              <small className="text-[#e11d1d]">{errors.nombre}</small>
-            )}
-          </div>
-          {/* APELLIDO 1 */}
-          <div>
-            <label className="block text-black font-semibold mb-1">
-              Primer Apellido <span className="text-[#e11d1d]">*</span>
-            </label>
-            <InputText
-              value={form.apellido1}
-              onChange={(e) => handleInput("apellido1", e.target.value)}
-              className={`w-full border-black rounded ${
-                errors.apellido1 ? "p-invalid" : ""
-              }`}
-              onBlur={() => setTouched((t) => ({ ...t, apellido1: true }))}
-              placeholder="Primer apellido"
-            />
-            {errors.apellido1 && (
-              <small className="text-[#e11d1d]">{errors.apellido1}</small>
-            )}
-          </div>
-          {/* APELLIDO 2 */}
-          <div>
-            <label className="block text-black font-semibold mb-1">
-              Segundo Apellido
-            </label>
-            <InputText
-              value={form.apellido2}
-              onChange={(e) => handleInput("apellido2", e.target.value)}
-              className="w-full border-black rounded"
-              placeholder="Segundo apellido"
-            />
-          </div>
-          {/* CORREO */}
-          <div>
-            <label className="block text-black font-semibold mb-1">
-              Correo <span className="text-[#e11d1d]">*</span>
-            </label>
-            <InputText
-              value={form.correo}
-              onChange={(e) => handleInput("correo", e.target.value)}
-              className={`w-full border-black rounded ${
-                errors.correo ? "p-invalid" : ""
-              }`}
-              onBlur={() => setTouched((t) => ({ ...t, correo: true }))}
-              placeholder="ejemplo@correo.com"
-            />
-            {errors.correo && (
-              <small className="text-[#e11d1d]">{errors.correo}</small>
-            )}
-          </div>
-          {/* CI */}
-          <div>
-            <label className="block text-black font-semibold mb-1">CI</label>
-            <InputText
-              value={form.ci}
-              onChange={(e) => handleInput("ci", e.target.value)}
-              className="w-full border-black rounded"
-              placeholder="Carnet de identidad"
-            />
-          </div>
-          {/* TELEFONO */}
-          <div>
-            <label className="block text-black font-semibold mb-1">
-              Teléfono
-            </label>
-            <InputText
-              value={form.telefono}
-              onChange={(e) => handleInput("telefono", e.target.value)}
-              className="w-full border-black rounded"
-              placeholder="Teléfono"
-            />
-          </div>
-          {/* ... */}
-          <div>
-            <label className="block text-black font-semibold mb-1">
-              Áreas de Especialización <span className="text-[#e11d1d]">*</span>
-            </label>
-            <MultiSelect
-              value={form.areas}
-              options={areasOptions}
-              onChange={(e) => handleInput("areas", e.value)}
-              className={`w-full border-black rounded ${
-                errors.areas ? "p-invalid" : ""
-              }`}
-              panelClassName="border-black"
-              display="chip"
-              placeholder="Seleccione áreas"
-              style={{ width: "100%" }}
-              onBlur={() => setTouched((t) => ({ ...t, areas: true }))}
-            />
-            {errors.areas && (
-              <small className="text-[#e11d1d]">{errors.areas}</small>
-            )}
-          </div>
-          {/* ... los demás campos igual */}
-          <div className="flex justify-end gap-3 pt-2 pb-2">
-            <Button
-              type="button"
-              label="Cancelar"
-              icon="pi pi-times"
-              className="p-button-text font-semibold"
-              style={{ color: "#e11d1d", border: "none" }}
-              onClick={() => setVisible(false)}
-            />
-            <Button
-              type="submit"
-              label={docenteEditar ? "Actualizar" : "Registrar"}
-              icon="pi pi-check"
-              className="font-semibold border-none"
-              style={{
-                background: "#e11d1d",
-                color: "#fff",
-                boxShadow: "0 2px 12px -2px #e11d1d44",
-              }}
-              disabled={
-                !form.nombre.trim() ||
-                !form.apellido1.trim() ||
-                !form.correo.trim() ||
-                !/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/i.test(form.correo.trim()) ||
-                !form.areas.length
-              }
-            />
-          </div>
-        </form>
+        <div className="relative">
+          {saving && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50">
+              <i className="pi pi-spin pi-spinner text-3xl text-[#e11d1d] mr-3" />
+              <span className="text-[#e11d1d] text-lg font-semibold">
+                Guardando docente...
+              </span>
+            </div>
+          )}
+          <form
+            className="px-7 pt-6 pb-3 flex flex-col gap-5"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setSaving(true);
+              await handleSubmit(e);
+              setSaving(false);
+            }}
+          >
+            {/* NOMBRE */}
+            <div>
+              <label className="block text-black font-semibold mb-1">
+                Nombre <span className="text-[#e11d1d]">*</span>
+              </label>
+              <InputText
+                value={form.nombre}
+                onChange={(e) => handleInput("nombre", e.target.value)}
+                className={`w-full border-black rounded ${
+                  errors.nombre ? "p-invalid" : ""
+                }`}
+                onBlur={() => setTouched((t) => ({ ...t, nombre: true }))}
+                autoFocus
+                placeholder="Nombre(s)"
+                disabled={saving}
+              />
+              {errors.nombre && (
+                <small className="text-[#e11d1d]">{errors.nombre}</small>
+              )}
+            </div>
+            {/* APELLIDO 1 */}
+            <div>
+              <label className="block text-black font-semibold mb-1">
+                Primer Apellido <span className="text-[#e11d1d]">*</span>
+              </label>
+              <InputText
+                value={form.apellido1}
+                onChange={(e) => handleInput("apellido1", e.target.value)}
+                className={`w-full border-black rounded ${
+                  errors.apellido1 ? "p-invalid" : ""
+                }`}
+                onBlur={() => setTouched((t) => ({ ...t, apellido1: true }))}
+                placeholder="Primer apellido"
+                disabled={saving}
+              />
+              {errors.apellido1 && (
+                <small className="text-[#e11d1d]">{errors.apellido1}</small>
+              )}
+            </div>
+            {/* APELLIDO 2 */}
+            <div>
+              <label className="block text-black font-semibold mb-1">
+                Segundo Apellido
+              </label>
+              <InputText
+                value={form.apellido2}
+                onChange={(e) => handleInput("apellido2", e.target.value)}
+                className="w-full border-black rounded"
+                placeholder="Segundo apellido"
+                disabled={saving}
+              />
+            </div>
+            {/* CORREO */}
+            <div>
+              <label className="block text-black font-semibold mb-1">
+                Correo <span className="text-[#e11d1d]">*</span>
+              </label>
+              <InputText
+                value={form.correo}
+                onChange={(e) => handleInput("correo", e.target.value)}
+                className={`w-full border-black rounded ${
+                  errors.correo ? "p-invalid" : ""
+                }`}
+                onBlur={() => setTouched((t) => ({ ...t, correo: true }))}
+                placeholder="ejemplo@correo.com"
+                disabled={saving}
+              />
+              {errors.correo && (
+                <small className="text-[#e11d1d]">{errors.correo}</small>
+              )}
+            </div>
+            {/* CI */}
+            <div>
+              <label className="block text-black font-semibold mb-1">CI</label>
+              <InputText
+                value={form.ci}
+                onChange={(e) => handleInput("ci", e.target.value)}
+                className="w-full border-black rounded"
+                placeholder="Carnet de identidad"
+                disabled={saving}
+              />
+            </div>
+            {/* TELEFONO */}
+            <div>
+              <label className="block text-black font-semibold mb-1">
+                Teléfono
+              </label>
+              <InputText
+                value={form.telefono}
+                onChange={(e) => handleInput("telefono", e.target.value)}
+                className="w-full border-black rounded"
+                placeholder="Teléfono"
+                disabled={saving}
+              />
+            </div>
+            {/* Áreas */}
+            <div>
+              <label className="block text-black font-semibold mb-1">
+                Áreas de Especialización{" "}
+                <span className="text-[#e11d1d]">*</span>
+              </label>
+              <MultiSelect
+                value={form.areas}
+                options={areasOptions}
+                onChange={(e) => handleInput("areas", e.value)}
+                className={`w-full border-black rounded ${
+                  errors.areas ? "p-invalid" : ""
+                }`}
+                panelClassName="border-black"
+                display="chip"
+                placeholder="Seleccione áreas"
+                style={{ width: "100%" }}
+                onBlur={() => setTouched((t) => ({ ...t, areas: true }))}
+                disabled={saving}
+              />
+              {errors.areas && (
+                <small className="text-[#e11d1d]">{errors.areas}</small>
+              )}
+            </div>
+            <div className="flex justify-end gap-3 pt-2 pb-2">
+              <Button
+                type="button"
+                label="Cancelar"
+                icon="pi pi-times"
+                className="p-button-text font-semibold"
+                style={{ color: "#e11d1d", border: "none" }}
+                onClick={() => setVisible(false)}
+                disabled={saving}
+              />
+              <Button
+                type="submit"
+                label={docenteEditar ? "Actualizar" : "Registrar"}
+                icon="pi pi-check"
+                className="font-semibold border-none"
+                style={{
+                  background: "#e11d1d",
+                  color: "#fff",
+                  boxShadow: "0 2px 12px -2px #e11d1d44",
+                }}
+                disabled={
+                  saving ||
+                  !form.nombre.trim() ||
+                  !form.apellido1.trim() ||
+                  !form.correo.trim() ||
+                  !/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/i.test(
+                    form.correo.trim()
+                  ) ||
+                  !form.areas.length
+                }
+              />
+            </div>
+          </form>
+        </div>
       </Dialog>
     </div>
   );

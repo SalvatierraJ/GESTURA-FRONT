@@ -9,6 +9,7 @@ export default function ImportarEstudiantesExcel() {
   const [visible, setVisible] = useState(false);
   const [fallidos, setFallidos] = useState([]); 
   const [exitosos, setExitosos] = useState([]); 
+  const [loading, setLoading] = useState(false);
   const toast = useRef();
 
   const crearEstudiantesMasivo = useEstudiantesStore(
@@ -18,6 +19,7 @@ export default function ImportarEstudiantesExcel() {
   const handleFile = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+    setLoading(true);
     const reader = new FileReader();
     reader.onload = async (evt) => {
       const data = new Uint8Array(evt.target.result);
@@ -32,6 +34,7 @@ export default function ImportarEstudiantesExcel() {
           summary: "Archivo vacío",
           detail: "No se encontraron datos en el Excel",
         });
+        setLoading(false);
         return;
       }
       try {
@@ -60,6 +63,7 @@ export default function ImportarEstudiantesExcel() {
           detail: err.message || "No se pudieron guardar los estudiantes",
         });
       }
+      setLoading(false);
     };
     reader.readAsArrayBuffer(file);
   };
@@ -73,6 +77,7 @@ export default function ImportarEstudiantesExcel() {
     setVisible(false);
     setFallidos([]);
     setExitosos([]);
+    setLoading(false);
   };
 
   return (
@@ -95,7 +100,15 @@ export default function ImportarEstudiantesExcel() {
         contentClassName="bg-white rounded-b-2xl p-0"
         className="rounded-2xl"
       >
-        <div className="flex flex-col gap-5 p-6">
+        <div className="flex flex-col gap-5 p-6 relative">
+          {/* Spinner Loading Overlay */}
+          {loading && (
+            <div className="absolute inset-0 bg-white bg-opacity-80 flex flex-col items-center justify-center z-50">
+              <i className="pi pi-spin pi-spinner text-3xl text-[#e11d1d] mb-2" />
+              <span className="text-[#e11d1d] text-lg font-semibold">Importando estudiantes...</span>
+            </div>
+          )}
+
           <p className="text-sm text-gray-700">
             Sube un archivo Excel (
             <span className="font-semibold">.xlsx, .xls, .csv</span>) con las
@@ -111,12 +124,14 @@ export default function ImportarEstudiantesExcel() {
             accept=".xlsx,.xls,.csv"
             onChange={handleFile}
             className="border border-gray-300 rounded p-2"
+            disabled={loading}
           />
           <Button
             label="Cancelar"
             className="p-button-text font-semibold"
             style={{ color: "#e11d1d", border: "none" }}
             onClick={closeModal}
+            disabled={loading}
           />
 
           {fallidos.length > 0 && (

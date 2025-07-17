@@ -17,9 +17,10 @@ export default function ModalAsignarJurados({
   const [visible, setVisible] = useState(false);
   const [selectedJurados, setSelectedJurados] = useState([]);
   const [sorteo, setSorteo] = useState(false);
-  const { jurados, cargarJurados, asignarJurados, loading } =
-    useDefensasStore();
+  const [saving, setSaving] = useState(false);
+  const { jurados, cargarJurados, asignarJurados } = useDefensasStore();
   const toast = useRef(null);
+
   useEffect(() => {
     if (visible) cargarJurados();
   }, [visible, cargarJurados]);
@@ -28,19 +29,21 @@ export default function ModalAsignarJurados({
     setVisible(false);
     setSelectedJurados([]);
     setSorteo(false);
+    setSaving(false);
   };
 
   const handleGuardar = async (e) => {
     e.preventDefault();
     if (!sorteo && selectedJurados.length === 0) return;
-      const juradoIds = sorteo
-    ? []
-    : selectedJurados.map(j => j.id || j.id_tribunal); 
+    setSaving(true);
+    const juradoIds = sorteo
+      ? []
+      : selectedJurados.map(j => j.id || j.id_tribunal);
     try {
       await asignarJurados({
         defensasIds,
         auto: sorteo,
-        juradoIds, 
+        juradoIds,
       });
       if (onSuccess) onSuccess();
       reset();
@@ -57,6 +60,7 @@ export default function ModalAsignarJurados({
         detail: mensaje,
         life: 6000,
       });
+      setSaving(false);
     }
   };
 
@@ -78,6 +82,7 @@ export default function ModalAsignarJurados({
         style={{ lineHeight: 1 }}
         aria-label="Cerrar"
         onClick={reset}
+        disabled={saving}
       >
         ×
       </button>
@@ -142,70 +147,83 @@ export default function ModalAsignarJurados({
         contentClassName="bg-white rounded-b-2xl p-0"
         className="rounded-2xl"
       >
-        <form
-          className="flex flex-col gap-8 px-8 pt-10 pb-5"
-          onSubmit={handleGuardar}
-        >
-          {/* Switch de sorteo */}
-          <div className="flex items-center gap-3">
-            <InputSwitch
-              checked={sorteo}
-              onChange={(e) => setSorteo(e.value)}
-              className="accent-[#e11d1d]"
-            />
-            <label className="font-semibold text-gray-800 text-base select-none">
-              Sorteo Automático de Jurados
-            </label>
-          </div>
-          {sorteo && (
-            <div className="text-xs text-[#e11d1d] ml-2">
-              El sistema sorteará automáticamente los jurados.
+        <div className="relative">
+          {/* Overlay spinner */}
+          {saving && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-80 z-50">
+              <i className="pi pi-spin pi-spinner text-3xl text-[#e11d1d] mb-2" />
+              <span className="text-[#e11d1d] text-lg font-semibold">
+                Guardando jurados...
+              </span>
             </div>
           )}
-
-          {/* MultiSelect de jurados */}
-          <div className="flex flex-col gap-1">
-            <label className="font-semibold text-gray-800 mb-1">
-              Seleccione Jurados <span className="text-[#e11d1d]">*</span>
-            </label>
-            <MultiSelect
-              value={selectedJurados}
-              options={jurados}
-              optionLabel="nombre_completo"
-              itemTemplate={juradoTemplate}
-              panelClassName="border-black"
-              display="chip"
-              placeholder="Selecciona uno o más jurados"
-              className="w-full border-black rounded"
-              disabled={sorteo}
-              onChange={(e) => setSelectedJurados(e.value)}
-              style={{ width: "100%" }}
-              selectedItemTemplate={juradoTemplate}
-            />
-            {!sorteo && selectedJurados.length === 0 && (
-              <small className="text-[#e11d1d]">
-                Seleccione al menos un jurado.
-              </small>
+          <form
+            className="flex flex-col gap-8 px-8 pt-10 pb-5"
+            onSubmit={handleGuardar}
+          >
+            {/* Switch de sorteo */}
+            <div className="flex items-center gap-3">
+              <InputSwitch
+                checked={sorteo}
+                onChange={(e) => setSorteo(e.value)}
+                className="accent-[#e11d1d]"
+                disabled={saving}
+              />
+              <label className="font-semibold text-gray-800 text-base select-none">
+                Sorteo Automático de Jurados
+              </label>
+            </div>
+            {sorteo && (
+              <div className="text-xs text-[#e11d1d] ml-2">
+                El sistema sorteará automáticamente los jurados.
+              </div>
             )}
-          </div>
 
-          {/* Botones */}
-          <div className="flex gap-5 mt-2">
-            <Button
-              type="button"
-              label="Cancelar"
-              className="w-1/2 border-2 border-black text-black font-semibold bg-white hover:bg-gray-100"
-              onClick={reset}
-            />
-            <Button
-              type="submit"
-              label="Guardar Jurados"
-              className="w-1/2 font-semibold bg-[#e11d1d] text-white border-none hover:bg-[#c00c0c]"
-              disabled={(!sorteo && selectedJurados.length === 0) || loading}
-              loading={loading}
-            />
-          </div>
-        </form>
+            {/* MultiSelect de jurados */}
+            <div className="flex flex-col gap-1">
+              <label className="font-semibold text-gray-800 mb-1">
+                Seleccione Jurados <span className="text-[#e11d1d]">*</span>
+              </label>
+              <MultiSelect
+                value={selectedJurados}
+                options={jurados}
+                optionLabel="nombre_completo"
+                itemTemplate={juradoTemplate}
+                panelClassName="border-black"
+                display="chip"
+                placeholder="Selecciona uno o más jurados"
+                className="w-full border-black rounded"
+                disabled={sorteo || saving}
+                onChange={(e) => setSelectedJurados(e.value)}
+                style={{ width: "100%" }}
+                selectedItemTemplate={juradoTemplate}
+              />
+              {!sorteo && selectedJurados.length === 0 && (
+                <small className="text-[#e11d1d]">
+                  Seleccione al menos un jurado.
+                </small>
+              )}
+            </div>
+
+            {/* Botones */}
+            <div className="flex gap-5 mt-2">
+              <Button
+                type="button"
+                label="Cancelar"
+                className="w-1/2 border-2 border-black text-black font-semibold bg-white hover:bg-gray-100"
+                onClick={reset}
+                disabled={saving}
+              />
+              <Button
+                type="submit"
+                label="Guardar Jurados"
+                className="w-1/2 font-semibold bg-[#e11d1d] text-white border-none hover:bg-[#c00c0c]"
+                disabled={(!sorteo && selectedJurados.length === 0) || saving}
+                loading={saving}
+              />
+            </div>
+          </form>
+        </div>
       </Dialog>
     </>
   );

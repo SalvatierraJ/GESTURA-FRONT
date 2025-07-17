@@ -13,6 +13,7 @@ export default function ModalRegistrarCarrera({
   limpiarCarreraEditar = () => {},
   onSuccess,
 }) {
+  const [saving, setSaving] = useState(false);
   const [nombre, setNombre] = useState("");
   const [facultad, setFacultad] = useState(null);
   const [touched, setTouched] = useState(false);
@@ -61,6 +62,7 @@ export default function ModalRegistrarCarrera({
     e.preventDefault();
     setTouched(true);
     if (!nombre.trim() || !facultad) return;
+    setSaving(true);
     try {
       if (modoEditar) {
         await actualizarCarrera({
@@ -87,6 +89,7 @@ export default function ModalRegistrarCarrera({
       setTimeout(() => {
         setVisible(false);
         limpiar();
+        setSaving(false);
       }, 600);
     } catch (error) {
       toast.current?.show({
@@ -94,6 +97,7 @@ export default function ModalRegistrarCarrera({
         summary: "Error",
         detail: "Ocurrió un error. Por favor, inténtelo de nuevo.",
       });
+      setSaving(false);
     }
   };
 
@@ -141,82 +145,93 @@ export default function ModalRegistrarCarrera({
         contentClassName="bg-none rounded-b-2xl p-0"
         className="rounded-2xl"
       >
-        <form
-          className="px-7 pt-6 pb-3 flex flex-col gap-6"
-          onSubmit={onRegistrar}
-        >
-          {/* Input Nombre de Carrera */}
-          <div>
-            <label className="block text-black font-semibold mb-2">
-              Nombre de la carrera <span className="text-[#e11d1d]">*</span>
-            </label>
-            <InputText
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className={`w-full border-black rounded focus:ring-2 focus:ring-[#e11d1d] ${
-                touched && !nombre.trim() ? "p-invalid" : ""
-              }`}
-              placeholder="Ingrese el nombre de la carrera"
-              style={{ color: "#e11d1d" }}
-              onBlur={() => setTouched(true)}
-              autoFocus
-            />
-            {touched && !nombre.trim() && (
-              <small className="text-[#e11d1d]">
-                El nombre de la carrera es obligatorio.
-              </small>
-            )}
-          </div>
+        <div className="relative">
+          {saving && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-80 z-50">
+              <i className="pi pi-spin pi-spinner text-3xl text-[#e11d1d] mr-3" />
+              <span className="text-[#e11d1d] text-lg font-semibold">
+                Guardando carrera...
+              </span>
+            </div>
+          )}
 
-          {/* Select de facultad */}
-          <div>
-            <label className="block text-black font-semibold mb-2">
-              Facultad <span className="text-[#e11d1d]">*</span>
-            </label>
-            <Dropdown
-              value={facultad}
-              options={facultadesDropdown}
-              onChange={(e) => setFacultad(e.value)}
-              placeholder="Seleccione una facultad"
-              className="w-full border-black rounded"
-              style={{ color: "#e11d1d" }}
-              panelClassName="bg-white border-black"
-              filter
-            />
-            {touched && !facultad && (
-              <small className="text-[#e11d1d]">
-                Debe seleccionar una facultad.
-              </small>
-            )}
-          </div>
+          <form
+            className="px-7 pt-6 pb-3 flex flex-col gap-6"
+            onSubmit={onRegistrar}
+          >
+            {/* Input Nombre de Carrera */}
+            <div>
+              <label className="block text-black font-semibold mb-2">
+                Nombre de la carrera <span className="text-[#e11d1d]">*</span>
+              </label>
+              <InputText
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                className={`w-full border-black rounded focus:ring-2 focus:ring-[#e11d1d] ${
+                  touched && !nombre.trim() ? "p-invalid" : ""
+                }`}
+                placeholder="Ingrese el nombre de la carrera"
+                style={{ color: "#e11d1d" }}
+                onBlur={() => setTouched(true)}
+                autoFocus
+              />
+              {touched && !nombre.trim() && (
+                <small className="text-[#e11d1d]">
+                  El nombre de la carrera es obligatorio.
+                </small>
+              )}
+            </div>
 
-          {/* Acciones */}
-          <div className="flex justify-end gap-3 pt-2 pb-2">
-            <Button
-              type="button"
-              label="Cancelar"
-              icon="pi pi-times"
-              className="p-button-text font-semibold"
-              style={{ color: "#e11d1d", border: "none" }}
-              onClick={() => {
-                setVisible(false);
-                limpiar();
-              }}
-            />
-            <Button
-              type="submit"
-              label={modoEditar ? "Guardar Cambios" : "Registrar"}
-              icon={modoEditar ? "pi pi-pencil" : "pi pi-check"}
-              className="font-semibold border-none"
-              style={{
-                background: "#e11d1d",
-                color: "#fff",
-                boxShadow: "0 2px 12px -2px #e11d1d44",
-              }}
-              disabled={!nombre.trim() || !facultad}
-            />
-          </div>
-        </form>
+            {/* Select de facultad */}
+            <div>
+              <label className="block text-black font-semibold mb-2">
+                Facultad <span className="text-[#e11d1d]">*</span>
+              </label>
+              <Dropdown
+                value={facultad}
+                options={facultadesDropdown}
+                onChange={(e) => setFacultad(e.value)}
+                placeholder="Seleccione una facultad"
+                className="w-full border-black rounded"
+                style={{ color: "#e11d1d" }}
+                panelClassName="bg-white border-black"
+                filter
+              />
+              {touched && !facultad && (
+                <small className="text-[#e11d1d]">
+                  Debe seleccionar una facultad.
+                </small>
+              )}
+            </div>
+
+            {/* Acciones */}
+            <div className="flex justify-end gap-3 pt-2 pb-2">
+              <Button
+                type="button"
+                label="Cancelar"
+                icon="pi pi-times"
+                className="p-button-text font-semibold"
+                style={{ color: "#e11d1d", border: "none" }}
+                onClick={() => {
+                  setVisible(false);
+                  limpiar();
+                }}
+              />
+              <Button
+                type="submit"
+                label={modoEditar ? "Guardar Cambios" : "Registrar"}
+                icon={modoEditar ? "pi pi-pencil" : "pi pi-check"}
+                className="font-semibold border-none"
+                style={{
+                  background: "#e11d1d",
+                  color: "#fff",
+                  boxShadow: "0 2px 12px -2px #e11d1d44",
+                }}
+                disabled={!nombre.trim() || !facultad}
+              />
+            </div>
+          </form>
+        </div>
       </Dialog>
     </div>
   );
