@@ -16,9 +16,9 @@ export async function fetchProfile() {
   });
   
 }
-export async function updateProfile({any}) { 
+export async function updateProfile(body) { 
     return apiFetch("/auth/actualizar-perfil", {
       method: "PUT",
-      body: JSON.stringify({ any})
+      body: JSON.stringify(body)
 
   }); } 

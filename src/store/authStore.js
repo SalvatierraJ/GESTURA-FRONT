@@ -42,15 +42,21 @@ export const useAuthStore = create((set, get) => ({
     );
   },
   updateProfile: async (body) => {
-    set({ loading: true, error: null });
-    try {
-        const response = await updateProfile(body);
-        set({ user: response.data, loading: false });
-        return { success: true, data: response.data };
-    } catch (error) {
-        const errorMessage = error.response?.data?.message || 'Error al actualizar el perfil';
-        set({ error: errorMessage, loading: false });
-        return { success: false, error: errorMessage };
+  set({ loading: true, error: null });
+  try {
+    const response = await updateProfile(body);
+    if (response.access_token) {
+      localStorage.setItem("access_token", response.access_token);
+      set({ user: response.data, token: response.access_token, loading: false });
+    } else {
+      set({ user: response.data, loading: false });
     }
-  },
+    return { success: true, data: response.data };
+  } catch (error) {
+    const errorMessage = error.response?.data?.message || 'Error al actualizar el perfil';
+    set({ error: errorMessage, loading: false });
+    return { success: false, error: errorMessage };
+  }
+}
+
 }));
