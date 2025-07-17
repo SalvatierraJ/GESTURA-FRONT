@@ -1,4 +1,8 @@
-  function ProfileForm() {
+ import {useEffect, useMemo} from 'react';
+ import {useAuthStore} from '../../../store/authStore';
+
+
+ function ProfileForm() {
     return (
       <form className="flex flex-col space-y-4 flex-1 max-w-[350px]">
         <div>
@@ -50,9 +54,15 @@
     );
   }
 
-  function ProfilePage() {
+  function ProfilePage() { 
+    const user = useAuthStore(state => state.user);
+    const rol_user = useAuthStore(state => state.getRoles());
+    const carreras = useMemo(()=>{
+      if(!user) return [];
+      return user.roles?.flatMap((r)=> r.carreras) || [];
+    });
     return (
-      <div className="w-full min-h-screen px-8 pt-8">
+      <div className="w-full min-h-screen px-8 pt-8">s
         <div className="max-w-6xl mx-auto">
           {/* Título y descripción */}
           <div>
@@ -89,28 +99,39 @@
           </div>
 
           {/* Carreras asignadas */}
-          <div className="mt-10">
-            <div className="text-lg font-bold text-gray-900 mb-3">
-              Carreras Asignadas
-            </div>
-            <div className="w-full">
-              <div className="rounded-xl border border-gray-400 bg-[#f3cece] flex items-center px-8 py-7 mb-6 min-h-[130px]">
-                <div className="flex-1">
-                  <div className="text-3xl md:text-3xl font-bold text-gray-800 leading-9">
-                    Ingenieria de Sistemas
-                  </div>
-                </div>
-                <div className="flex items-center justify-end">
-                  <img
-                    src="https://placehold.co/100x100/png?text=Chart"
-                    alt="Ilustración de dashboard estadístico sobre fondo aqua claro"
-                    className="rounded-lg shadow-md object-cover w-[110px] h-[90px] ml-3"
-                    style={{ background: "#e2f0fa" }}
-                  />
-                </div>
-              </div>
-            </div>
+          {( user.roles[0].Nombre !== "Estudiante" && rol_user.nombre !== "Estudiante")   && (
+  <div className="mt-10">
+    <div className="text-lg font-bold text-gray-900 mb-4">
+      Carreras Asignadas
+    </div>
+    
+    {/* Contenedor flexible que permite que los elementos se envuelvan */}
+    <div className="flex flex-wrap gap-4">
+
+      {/* Mapeamos cada carrera a una "etiqueta" compacta */}
+      {carreras.map(carrera => (
+        <div 
+          key={carrera.id_carrera} 
+          className="flex items-center space-x-3 bg-slate-100 border border-slate-200 
+                     rounded-full py-2 px-4 transition-all hover:bg-slate-200"
+        >
+          {/* Icono con el color solicitado */}
+          <div className="bg-red-700 text-white rounded-full p-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.627 48.627 0 0 1 12 20.904a48.627 48.627 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.57 50.57 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" />
+            </svg>
           </div>
+          
+          {/* Nombre de la carrera */}
+          <span className="font-medium text-gray-700 text-sm">
+            {carrera.nombre_carrera}
+          </span>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+          {/*Fin carreras asignadas */}
         </div>
       </div>
     );
