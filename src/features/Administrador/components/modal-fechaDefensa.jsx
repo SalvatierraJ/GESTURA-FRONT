@@ -13,6 +13,7 @@ export default function ModalAsignarDefensaSorteo({
   disabled = false,
   onSubmit,
   onSuccess,
+  tipo,
   className = "",
 }) {
   const [visible, setVisible] = useState(false);
@@ -49,7 +50,7 @@ export default function ModalAsignarDefensaSorteo({
         sorteaArea,
         sorteaCaso,
         estudianteIds,
-        tipoDefensa: "Examen de grado Interna",
+        tipoDefensa:tipo,
       });
       console.log("DATA DEFENSA SORTEADA:", data);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);

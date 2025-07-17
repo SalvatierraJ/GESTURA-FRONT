@@ -1,13 +1,14 @@
 {
   "name": "gestura",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "release": "standard-version"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.3.0",
@@ -15,6 +16,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@tailwindcss/vite": "^4.1.8",
+    "framer-motion": "^12.23.6",
     "jszip": "^3.10.1",
     "pdfjs-dist": "^5.3.31",
     "primeicons": "^7.0.0",
@@ -37,6 +39,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "postcss": "^8.5.4",
+    "standard-version": "^9.5.0",
     "tailwindcss": "^4.1.8",
     "vite": "^6.3.5",
     "vite-plugin-static-copy": "^3.1.0"

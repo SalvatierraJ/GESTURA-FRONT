@@ -2,14 +2,14 @@ import { InputText } from "primereact/inputtext";
 import { Password } from "primereact/password";
 import { Button } from "primereact/button";
 import { Checkbox } from "primereact/checkbox";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { login, fetchProfile } from "@/services/auth";
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
-
+import ErrorModal from "@/components/errorModal";
 const LoginForm = () => {
-  const { loginWithRedirect, isAuthenticated, getAccessTokenSilently } =
+  const { isLoading, loginWithRedirect, isAuthenticated, getAccessTokenSilently } =
     useAuth0();
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -53,7 +53,7 @@ const handleLoginLocal = async (e) => {
       navigate("/home");
     }
   } catch (err) {
-    alert("Usuario o contraseña incorrectos");
+    setErrorModal(true);
   }
 };
 
@@ -61,7 +61,16 @@ const handleLoginLocal = async (e) => {
   const [checked, setChecked] = useState(false);
   const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
-
+  const [errorModal, setErrorModal] = useState(false); 
+  const errorMessage = "Usuario o contraseña incorrecta";
+//Referencia al input de password
+const passwordRef = useRef(null);
+const handleEmailKeyDown = (e) => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    passwordRef.current?.focus();
+  }
+};
   return (
     <div className="w-full min-h-screen flex items-center justify-center bg-white">
       <div className="max-w-6xl w-full bg-white shadow-xl rounded-xl overflow-hidden flex flex-col md:flex-row">
@@ -96,6 +105,7 @@ const handleLoginLocal = async (e) => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="john.doe@gmail.com"
                 className="w-full mt-1 px-4 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                onKeyDown={handleEmailKeyDown}
               />
             </div>
 
@@ -116,6 +126,8 @@ const handleLoginLocal = async (e) => {
                 toggleMask
                 feedback={false}
                 tabIndex={2}
+                inputRef={passwordRef}
+
               />
             </div>
             <br />
@@ -182,6 +194,9 @@ const handleLoginLocal = async (e) => {
           </div>
         </div>
       </div>
+      <ErrorModal show={errorModal} 
+        onClose={() => setErrorModal(false)}
+        message={errorMessage}/>
     </div>
   );
 };

@@ -9,7 +9,8 @@ import InputBuscar from "@/components/searchInput";
 import { Paginator } from "primereact/paginator";
 import { Button } from "primereact/button";
 
-const normalizar = str => (str || '').toLowerCase().replace(/\s+/g, ' ').trim();
+const normalizar = (str) =>
+  (str || "").toLowerCase().replace(/\s+/g, " ").trim();
 
 const getUltimaDefensaPorTipo = (defensas, tipo) =>
   [...(defensas || [])]
@@ -21,7 +22,6 @@ const getUltimaDefensaPorTipo = (defensas, tipo) =>
     .sort((a, b) => new Date(b.fecha_defensa) - new Date(a.fecha_defensa))[0] ||
   null;
 
-
 const getDefensaEstado = (defensa) => defensa?.estado || "SIN_ASIGNAR";
 
 const DefensaCellTipo = ({
@@ -31,13 +31,17 @@ const DefensaCellTipo = ({
   onAsignarDefensa,
   cargarEstudiantes,
   page,
-  pageSize
+  pageSize,
 }) => {
-  const otraTipo = tipo === "Examen de grado Interna" ? "Examen de grado Externa" : "Examen de grado Interna";
+  const otraTipo =
+    tipo === "Examen de grado Interna"
+      ? "Examen de grado Externa"
+      : "Examen de grado Interna";
   const defensa = getUltimaDefensaPorTipo(defensas, tipo);
   const defensaOtra = getUltimaDefensaPorTipo(defensas, otraTipo);
   const disabled =
-    tipo === "Examen de grado Externa" && getDefensaEstado(defensaOtra) !== "APROBADO";
+    tipo === "Examen de grado Externa" &&
+    getDefensaEstado(defensaOtra) !== "APROBADO";
 
   const puedeCrearNueva = !defensa || getDefensaEstado(defensa) === "REPROBADO";
   const pendiente = getDefensaEstado(defensa) === "PENDIENTE";
@@ -191,18 +195,24 @@ const MainContent = () => {
   const [activeTab, setActiveTab] = useState("ExamendeGrado");
   const [searchTerm, setSearchTerm] = useState("");
   const [selected, setSelected] = useState([]);
-  const { Estudiantes, cargarEstudiantes, loading, total, page, pageSize } =
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const { estudiantes, cargarEstudiantes, loading, total } =
     useEstudiantesStore();
   useEffect(() => {
-    cargarEstudiantes(page, pageSize);
-  }, [page, pageSize, cargarEstudiantes]);
-
-  const filteredEstudiante = Estudiantes.filter((c) =>
+    if (activeTab === "ExamendeGrado") cargarEstudiantes(page, pageSize);
+  }, [activeTab,page, pageSize, cargarEstudiantes]);
+  useEffect(() => {
+    setPage(1);
+    setPageSize(10);
+  }, [activeTab]);
+  const filteredEstudiante = estudiantes.filter((c) =>
     (c.nombre || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const onPageChange = (event) => {
-    cargarEstudiantes(event.page + 1, event.rows);
+    setPage(event.page + 1);
+    setPageSize(event.rows);
   };
 
   const [modalVisible, setModalVisible] = useState(false);

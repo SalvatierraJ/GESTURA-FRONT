@@ -9,7 +9,7 @@ import AddNota from "@/features/Administrador/components/agregarNota";
 import { Paginator } from "primereact/paginator";
 import InputBuscar from "@/components/searchInput";
 
-const DefenseRow = ({ student, selected, onToggle, addAula }) => {
+const DefenseRow = ({ student, selected, onToggle }) => {
   const tieneJurados = student.jurados && student.jurados.length > 0;
   const checked = !tieneJurados && selected.includes(student.id_defensa);
 
@@ -65,24 +65,37 @@ const MainContent = () => {
   const [selected, setSelected] = useState([]);
   const [activeTab, setActiveTab] = useState("Interna");
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const {
     defensasInterna,
-    page,
-    pageSize,
+    defensasExternas,
     totalPages,
     loading,
     error,
     cargarDefensasInterna,
+    cargarDefensasExternas,
   } = useDefensasStore();
   useEffect(() => {
-    cargarDefensasInterna(page, pageSize, "Examen de grado Interna");
-  }, [page, pageSize, cargarDefensasInterna]);
-
+    if (activeTab === "Interna")
+      cargarDefensasInterna(page, pageSize, "Examen de grado Interna");
+    else if (activeTab === "Externa")
+      cargarDefensasExternas(page, pageSize, "Examen de grado Externa");
+  }, [activeTab,page, pageSize, cargarDefensasInterna, cargarDefensasExternas]);
+  useEffect(() => {
+    setPage(1);
+    setPageSize(10);
+  }, [activeTab]);
   const filteredDefensa = defensasInterna.filter((c) =>
     (c.estudiante || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
+  const filteredDefensaExterna = defensasExternas.filter((c) =>
+    (c.estudiante || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const onPageChange = (event) => {
-    cargarDefensasInterna(event.page + 1, event.rows);
+    setPage(event.page + 1);
+    setPageSize(event.rows);
   };
   const toggleSelect = (id_defensa) => {
     setSelected((prev) =>
@@ -106,7 +119,9 @@ const MainContent = () => {
         console.log(data);
       }}
       onSuccess={() => {
-        cargarDefensasInterna(page, pageSize);
+        if (activeTab === "Interna") cargarDefensasInterna(page, pageSize);
+        else if (activeTab === "Externa")
+          cargarDefensasExternas(page, pageSize, "Examen de grado Externa");
       }}
     />,
   ];
@@ -166,6 +181,65 @@ const MainContent = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredDefensa.map((student) => (
+                <DefenseRow
+                  key={student.id_defensa}
+                  student={student}
+                  selected={selected}
+                  onToggle={toggleSelect}
+                  AddAula={AddAula}
+                />
+              ))}
+            </tbody>
+          </table>
+          <div className="w-full flex justify-center mt-4">
+            <Paginator
+              first={(page - 1) * pageSize}
+              rows={pageSize}
+              totalRecords={totalPages}
+              onPageChange={onPageChange}
+              rowsPerPageOptions={[10, 25, 50]}
+              template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+            />
+          </div>
+        </>
+      )}
+      {activeTab === "Externa" && (
+        <>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3"></th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  #
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estudiante
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tipo de Defensa
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fecha de Defensa
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Hora de Defensa
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Aula
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Jurado
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nota Final
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredDefensaExterna.map((student) => (
                 <DefenseRow
                   key={student.id_defensa}
                   student={student}

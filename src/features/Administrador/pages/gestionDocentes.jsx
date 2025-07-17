@@ -77,17 +77,11 @@ const TeacherContract = ({ teacher }) => (
 
 const MainContent = () => {
   const [activeTab, setActiveTab] = useState("docentes");
-  const {
-    cargarDocentes,
-    docentes,
-    page,
-    pageSize,
-    total,
-    loading,
-    actualizarEstadoDocente,
-  } = useDocentesStore();
+  const { cargarDocentes, docentes, total, loading, actualizarEstadoDocente } =
+    useDocentesStore();
   const [searchTerm, setSearchTerm] = useState("");
-
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [modalDocenteVisible, setModalDocenteVisible] = useState(false);
   const [docenteAEditar, setDocenteAEditar] = useState(null);
   const handleCrear = () => {
@@ -99,11 +93,15 @@ const MainContent = () => {
     setModalDocenteVisible(true);
   };
   useEffect(() => {
-    cargarDocentes(page, pageSize);
-  }, [page, pageSize, cargarDocentes]);
-
+    if (activeTab === "docentes") cargarDocentes(page, pageSize);
+  }, [activeTab,page, pageSize, cargarDocentes]);
+  useEffect(() => {
+    setPage(1);
+    setPageSize(10);
+  }, [activeTab]);
   const onPageChange = (event) => {
-    cargarDocentes(event.page + 1, event.rows);
+    setPage(event.page + 1);
+    setPageSize(event.rows);
   };
 
   const filteredDocentes = docentes.filter((c) =>

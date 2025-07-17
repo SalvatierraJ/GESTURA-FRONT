@@ -4,9 +4,10 @@ import {
   createEstudiante,
   updateEstudiante,
   generarDefensa,
+  createEstudianteMasivo
 } from "@/services/estudiantes.services";
 export const useEstudiantesStore = create((set) => ({
-  Estudiantes: [],
+  estudiantes: [],
   total: 0,
   page: 1,
   pageSize: 10,
@@ -17,7 +18,7 @@ export const useEstudiantesStore = create((set) => ({
     try {
       const data = await fetchEstudiantes(page, pageSize);
       set({
-        Estudiantes: data.items,
+        estudiantes: data.items,
         total: data.total,
         page: data.page,
         pageSize: data.pageSize,
@@ -64,6 +65,27 @@ export const useEstudiantesStore = create((set) => ({
     } catch (err) {
       set({ error: err.message || "Error al generar defensa", loading: false });
       throw err;
+    }
+  },
+  crearEstudiantesMasivo: async ({ estudiantes }) => {
+    set({ loading: true, error: null });
+    try {
+      const resultado = await createEstudianteMasivo({ estudiantes });
+      if (resultado && resultado.exitosos && Array.isArray(resultado.exitosos)) {
+        set((state) => ({
+          estudiantes: [
+            ...state.estudiantes,
+            ...resultado.exitosos.map((e) => e.estudiante)
+          ],
+          loading: false,
+        }));
+      } else {
+        set({ loading: false });
+      }
+      return resultado;
+    } catch (error) {
+      set({ error: error.message || "Error al crear estudiantes", loading: false });
+      throw error;
     }
   },
 }));

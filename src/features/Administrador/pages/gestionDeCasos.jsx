@@ -9,20 +9,59 @@ import { useCasosStore } from "@/store/casos.store";
 import { Button } from "primereact/button";
 import { Paginator } from "primereact/paginator";
 import { useAuthStore } from "@/store/authStore";
-const FilaCasos = ({ caso }) => (
+import ModalDocumento from "@/features/Administrador/components/modal_Prev_PDF";
+import ModalEditarCasoEstudio from "@/features/Administrador/components/modal-editar-casoEstudio";
+const FilaCasos = ({
+  caso,
+  onPreview,
+  actualizarEstadoCasoEstudio,
+  cargarCasosEstudio,
+  setModalEditarVisible,
+  setCasoEditar
+}) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{caso.id_casoEstudio}</td>
     <td className="px-4 py-3 text-sm text-gray-700">{caso.Nombre_Archivo}</td>
     <td className="px-4 py-3 text-sm text-gray-700">{caso.areaName}</td>
     <td className="px-4 py-3 text-sm text-gray-700">{caso.Tema}</td>
     <td className="px-4 py-3">
-      <button className="text-xs font-semibold text-green-800 bg-green-200 px-2 py-1 rounded-full">
-        {caso.estado ? "Activo" : "Inactivo"}
-      </button>
+      {caso.estado == true ? (
+        <span
+          className="text-xs font-semibold text-green-800 bg-green-200 px-2 py-1 rounded-full cursor-pointer"
+          onClick={async () => {
+            await actualizarEstadoCasoEstudio({
+              id: caso.id_casoEstudio,
+              estado: false,
+            });
+            cargarCasosEstudio(1, 10);
+          }}
+        >
+          Activo
+        </span>
+      ) : (
+        <span
+          className="text-xs font-semibold text-red-800 bg-red-200 px-2 py-1 rounded-full cursor-pointer"
+          onClick={async () => {
+            await actualizarEstadoCasoEstudio({
+              id: caso.id_casoEstudio,
+              estado: true,
+            });
+            cargarCasosEstudio(1, 10);
+          }}
+        >
+          Inactivo
+        </span>
+      )}
     </td>
     <td className="px-4 py-3 text-center space-x-2">
-      <button className="text-blue-600 hover:text-blue-800">
+      <button className="text-blue-600 hover:text-blue-800" onClick={() => {setCasoEditar(caso); setModalEditarVisible(true)}}>
         <i className="fas fa-edit"></i>
+      </button>
+      <button
+        className="text-blue-600 hover:text-blue-800"
+        onClick={() => onPreview(caso.url)}
+      >
+        <i className="fas fa-eye"></i>
       </button>
     </td>
   </tr>
@@ -134,20 +173,25 @@ const MainContent = () => {
   const [carreraEditar, setCarreraEditar] = useState(null);
   const roles = useAuthStore((state) => state.getRoles());
   const isAdmin = roles.some((r) => r.Nombre === "Admin");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState("");
+  const [modalEditarVisible, setModalEditarVisible] = useState(false);
+  const [casoEditar, setCasoEditar] = useState(null);
   const {
     carreras,
     cargarCarreras,
     actualizarEstadoCarrera,
     actualizarEstadoAreaEstudio,
+    actualizarEstadoCasoEstudio,
     areas,
     cargarAreasEstudio,
     casos,
     cargarCasosEstudio,
     loading,
     total,
-    page,
-    pageSize,
   } = useCasosStore();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const filteredCarreras = carreras.filter((c) =>
     (c.nombre_carrera || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -161,22 +205,27 @@ const MainContent = () => {
 
   const [modalAreaVisible, setModalAreaVisible] = useState(false);
   const [areaAEditar, setAreaAEditar] = useState(null);
-
+  const handlePreview = (url) => {
+    setPdfUrl(url);
+    setModalVisible(true);
+  };
   useEffect(() => {
-    cargarCarreras(page, pageSize);
-    cargarAreasEstudio(page, pageSize);
-    cargarCasosEstudio(page, pageSize);
-  }, [page, pageSize, cargarCarreras, cargarAreasEstudio]);
-
+    if (activeTab === "Casos") cargarCasosEstudio(page, pageSize);
+    else if (activeTab === "Areas") cargarAreasEstudio(page, pageSize);
+    else if (activeTab === "Carrera") cargarCarreras(page, pageSize);
+  }, [activeTab, page, pageSize, cargarCarreras, cargarAreasEstudio]);
+  useEffect(() => {
+    setPage(1);
+    setPageSize(10);
+  }, [activeTab]);
   const onPageChange = (event) => {
-    cargarCarreras(event.page + 1, event.rows);
-    cargarAreasEstudio(event.page + 1, event.rows);
-    cargarCasosEstudio(event.page + 1, event.rows);
+    setPage(event.page + 1);
+    setPageSize(event.rows);
   };
   const tabs = [
     { key: "Casos", label: "Casos de Estudio" },
     { key: "Areas", label: "Areas" },
-     ...(isAdmin ? [{ key: "Carrera", label: "Carreras" }] : []),
+    ...(isAdmin ? [{ key: "Carrera", label: "Carreras" }] : []),
   ];
 
   const actions = {
@@ -207,30 +256,32 @@ const MainContent = () => {
         }}
       />,
     ],
-     ...(isAdmin && {Carrera: [
-      <InputBuscar
-        key="search"
-        value={searchTerm}
-        onChange={setSearchTerm}
-        placeholder="Buscar carrera..."
-      />,
-      <RegistrarCarrera
-        visible={modalCarreraVisible}
-        setVisible={setModalCarreraVisible}
-        carrera={carreraEditar}
-        limpiarCarreraEditar={() => setCarreraEditar(null)}
-      />,
-      <Button
-        className="mb-4 bg-red-700 text-white hover:bg-red-800"
-        style={{ backgroundColor: "#e11d1d", hover: "#b91c1c" }}
-        icon="pi pi-plus"
-        label="Registrar Carrera"
-        onClick={() => {
-          setCarreraEditar(null);
-          setModalCarreraVisible(true);
-        }}
-      />,
-    ]}),
+    ...(isAdmin && {
+      Carrera: [
+        <InputBuscar
+          key="search"
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar carrera..."
+        />,
+        <RegistrarCarrera
+          visible={modalCarreraVisible}
+          setVisible={setModalCarreraVisible}
+          carrera={carreraEditar}
+          limpiarCarreraEditar={() => setCarreraEditar(null)}
+        />,
+        <Button
+          className="mb-4 bg-red-700 text-white hover:bg-red-800"
+          style={{ backgroundColor: "#e11d1d", hover: "#b91c1c" }}
+          icon="pi pi-plus"
+          label="Registrar Carrera"
+          onClick={() => {
+            setCarreraEditar(null);
+            setModalCarreraVisible(true);
+          }}
+        />,
+      ],
+    }),
   };
 
   return (
@@ -268,7 +319,15 @@ const MainContent = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredCasos.map((caso) => (
-                <FilaCasos key={caso.id_casoEstudio} caso={caso} />
+                <FilaCasos
+                  key={caso.id_casoEstudio}
+                  caso={caso}
+                  onPreview={handlePreview}
+                  actualizarEstadoCasoEstudio={actualizarEstadoCasoEstudio}
+                  cargarCasosEstudio={cargarCasosEstudio}
+                  setCasoEditar={setCasoEditar}
+                  setModalEditarVisible={setModalEditarVisible}
+                />
               ))}
             </tbody>
           </table>
@@ -282,6 +341,19 @@ const MainContent = () => {
               template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
             />
           </div>
+          <ModalDocumento
+            visible={modalVisible}
+            onHide={() => setModalVisible(false)}
+            url={pdfUrl}
+          />
+          <ModalEditarCasoEstudio
+            visible={modalEditarVisible}
+            onHide={() => setModalEditarVisible(false)}
+            caso={casoEditar}
+            onUpdateSuccess={() => {
+              cargarCasosEstudio(page,pageSize);
+            }}
+          />
         </>
       )}
       {activeTab === "Areas" && (
@@ -327,6 +399,7 @@ const MainContent = () => {
                   }}
                   actualizarEstadoAreaEstudio={actualizarEstadoAreaEstudio}
                   cargarAreasEstudio={cargarAreasEstudio}
+                  cargarCasosEstudio={cargarCasosEstudio}
                 />
               ))}
             </tbody>
@@ -349,7 +422,7 @@ const MainContent = () => {
           />
         </>
       )}
-      {activeTab === "Carrera" &&  isAdmin && (
+      {activeTab === "Carrera" && isAdmin && (
         <div className="w-full">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

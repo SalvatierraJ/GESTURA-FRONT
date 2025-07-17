@@ -14,4 +14,11 @@ export async function fetchProfile() {
   return apiFetch("/auth/profile", {
     method: "GET",
   });
+  
 }
+export async function updateProfile(body) { 
+    return apiFetch("/auth/actualizar-perfil", {
+      method: "PUT",
+      body: JSON.stringify(body)
+
+  }); } 
