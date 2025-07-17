@@ -16,7 +16,6 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
   const registerUser = useUserStore((state) => state.registerUser);
   const updateUser = useUserStore((state) => state.updateUser);
 
-  // Expone método para abrir modal desde cualquier parte
   useImperativeHandle(ref, () => ({
     openForCreate: () => {
       setIsEdit(false);
@@ -27,9 +26,9 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
     },
     openForEdit: (usuario) => {
       setIsEdit(true);
-      setEditingUserId(usuario.id); // Cambia según el ID de tu backend
+      setEditingUserId(usuario.id);
       setForm({
-        correo: "", // No mostrar el correo actual (sólo editable)
+        correo: "",
         password: "",
         roles: usuario.roles?.map((rol) => rol.id) || [],
       });
@@ -58,9 +57,8 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
     e.preventDefault();
     setTouched({ correo: true, password: true, roles: true });
 
-    // Reglas de validación
     if (
-      (!isEdit && !form.correo.trim()) || // correo requerido solo al registrar
+      (!isEdit && !form.correo.trim()) ||
       form.roles.length === 0
     )
       return;
@@ -124,114 +122,127 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
       contentClassName="bg-white rounded-b-2xl p-0"
       className="rounded-2xl"
     >
-      <form
-        className="px-7 pt-6 pb-3 flex flex-col gap-6"
-        onSubmit={handleSubmit}
-      >
-        <div>
-          <label className="block text-black font-semibold mb-1">
-            Correo {isEdit ? "" : <span className="text-[#e11d1d]">*</span>}
-          </label>
-          <InputText
-            value={form.correo}
-            onChange={(e) => handleInput("correo", e.target.value)}
-            className={`w-full border-black rounded ${
-              touched.correo && !form.correo.trim() && !isEdit ? "p-invalid" : ""
-            }`}
-            onBlur={() => setTouched((t) => ({ ...t, correo: true }))}
-            placeholder={isEdit ? "Dejar en blanco para mantener el correo" : "ejemplo@correo.com"}
-            autoComplete="off"
-          />
-          {isEdit && (
-            <small className="text-gray-600">Dejar en blanco para mantener el correo actual.</small>
-          )}
-          {touched.correo && !form.correo.trim() && !isEdit && (
-            <small className="text-[#e11d1d]">
-              El correo es obligatorio.
-            </small>
-          )}
-        </div>
-        <div>
-          <label className="block text-black font-semibold mb-1">
-            Contraseña {isEdit ? "" : <span className="text-[#e11d1d]">*</span>}
-          </label>
-          <InputText
-            value={form.password}
-            onChange={(e) => handleInput("password", e.target.value)}
-            className={`w-full border-black rounded ${
-              touched.password && !form.password.trim() && !isEdit ? "p-invalid" : ""
-            }`}
-            onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-            placeholder={isEdit ? "Dejar en blanco para mantener la contraseña" : "Contraseña"}
-            type="password"
-            autoComplete="new-password"
-          />
-          {isEdit && (
-            <small className="text-gray-600">Dejar en blanco para mantener la contraseña actual.</small>
-          )}
-          {touched.password && !form.password.trim() && !isEdit && (
-            <small className="text-[#e11d1d]">
-              La contraseña es obligatoria.
-            </small>
-          )}
-        </div>
-        <div>
-          <label className="block text-black font-semibold mb-1">
-            Roles <span className="text-[#e11d1d]">*</span>
-          </label>
-          <MultiSelect
-            value={form.roles}
-            options={roles.map((rol) => ({
-              label: rol.nombre,
-              value: rol.id,
-            }))}
-            onChange={(e) => handleInput("roles", e.value)}
-            optionLabel="label"
-            placeholder="Selecciona uno o más roles"
-            className={`w-full border-black rounded ${
-              touched.roles && form.roles.length === 0 ? "p-invalid" : ""
-            }`}
-            display="chip"
-            panelClassName="border-black"
-          />
-          {touched.roles && form.roles.length === 0 && (
-            <small className="text-[#e11d1d]">
-              Selecciona al menos un rol.
-            </small>
-          )}
-        </div>
-
-        {error && (
-          <div className="text-[#e11d1d] text-center font-medium mt-1">{error}</div>
+      <div className="relative">
+        {loading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-80 z-50">
+            <i className="pi pi-spin pi-spinner text-3xl text-[#e11d1d] mb-2" />
+            <span className="text-[#e11d1d] text-lg font-semibold">
+              {isEdit ? "Actualizando usuario..." : "Registrando usuario..."}
+            </span>
+          </div>
         )}
-
-        <div className="flex justify-end gap-3 pt-2 pb-2">
-          <Button
-            type="button"
-            label="Cancelar"
-            icon="pi pi-times"
-            className="p-button-text font-semibold"
-            style={{ color: "#e11d1d", border: "none" }}
-            onClick={() => setVisible(false)}
-          />
-          <Button
-            type="submit"
-            label={loading ? (isEdit ? "Actualizando..." : "Registrando...") : (isEdit ? "Actualizar" : "Registrar")}
-            icon="pi pi-check"
-            className="font-semibold border-none"
-            style={{
-              background: "#e11d1d",
-              color: "#fff",
-              boxShadow: "0 2px 12px -2px #e11d1d44",
-            }}
-            disabled={
-              loading ||
-              (!isEdit && (!form.correo.trim() || !form.password.trim())) ||
-              form.roles.length === 0
-            }
-          />
-        </div>
-      </form>
+        <form
+          className="px-7 pt-6 pb-3 flex flex-col gap-6"
+          onSubmit={handleSubmit}
+        >
+          <div>
+            <label className="block text-black font-semibold mb-1">
+              Correo {isEdit ? "" : <span className="text-[#e11d1d]">*</span>}
+            </label>
+            <InputText
+              value={form.correo}
+              onChange={(e) => handleInput("correo", e.target.value)}
+              className={`w-full border-black rounded ${
+                touched.correo && !form.correo.trim() && !isEdit ? "p-invalid" : ""
+              }`}
+              onBlur={() => setTouched((t) => ({ ...t, correo: true }))}
+              placeholder={isEdit ? "Dejar en blanco para mantener el correo" : "ejemplo@correo.com"}
+              autoComplete="off"
+              disabled={loading}
+            />
+            {isEdit && (
+              <small className="text-gray-600">Dejar en blanco para mantener el correo actual.</small>
+            )}
+            {touched.correo && !form.correo.trim() && !isEdit && (
+              <small className="text-[#e11d1d]">
+                El correo es obligatorio.
+              </small>
+            )}
+          </div>
+          <div>
+            <label className="block text-black font-semibold mb-1">
+              Contraseña {isEdit ? "" : <span className="text-[#e11d1d]">*</span>}
+            </label>
+            <InputText
+              value={form.password}
+              onChange={(e) => handleInput("password", e.target.value)}
+              className={`w-full border-black rounded ${
+                touched.password && !form.password.trim() && !isEdit ? "p-invalid" : ""
+              }`}
+              onBlur={() => setTouched((t) => ({ ...t, password: true }))}
+              placeholder={isEdit ? "Dejar en blanco para mantener la contraseña" : "Contraseña"}
+              type="password"
+              autoComplete="new-password"
+              disabled={loading}
+            />
+            {isEdit && (
+              <small className="text-gray-600">Dejar en blanco para mantener la contraseña actual.</small>
+            )}
+            {touched.password && !form.password.trim() && !isEdit && (
+              <small className="text-[#e11d1d]">
+                La contraseña es obligatoria.
+              </small>
+            )}
+          </div>
+          <div>
+            <label className="block text-black font-semibold mb-1">
+              Roles <span className="text-[#e11d1d]">*</span>
+            </label>
+            <MultiSelect
+              value={form.roles}
+              options={roles.map((rol) => ({
+                label: rol.nombre,
+                value: rol.id,
+              }))}
+              onChange={(e) => handleInput("roles", e.value)}
+              optionLabel="label"
+              placeholder="Selecciona uno o más roles"
+              className={`w-full border-black rounded ${
+                touched.roles && form.roles.length === 0 ? "p-invalid" : ""
+              }`}
+              display="chip"
+              panelClassName="border-black"
+              disabled={loading}
+            />
+            {touched.roles && form.roles.length === 0 && (
+              <small className="text-[#e11d1d]">
+                Selecciona al menos un rol.
+              </small>
+            )}
+          </div>
+          {error && (
+            <div className="text-[#e11d1d] text-center font-medium mt-1">{error}</div>
+          )}
+          <div className="flex justify-end gap-3 pt-2 pb-2">
+            <Button
+              type="button"
+              label="Cancelar"
+              icon="pi pi-times"
+              className="p-button-text font-semibold"
+              style={{ color: "#e11d1d", border: "none" }}
+              onClick={() => setVisible(false)}
+              disabled={loading}
+            />
+            <Button
+              type="submit"
+              label={loading ? (isEdit ? "Actualizando..." : "Registrando...") : (isEdit ? "Actualizar" : "Registrar")}
+              icon="pi pi-check"
+              className="font-semibold border-none"
+              style={{
+                background: "#e11d1d",
+                color: "#fff",
+                boxShadow: "0 2px 12px -2px #e11d1d44",
+              }}
+              disabled={
+                loading ||
+                (!isEdit && (!form.correo.trim() || !form.password.trim())) ||
+                form.roles.length === 0
+              }
+              loading={loading}
+            />
+          </div>
+        </form>
+      </div>
     </Dialog>
   );
 });

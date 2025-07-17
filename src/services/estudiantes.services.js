@@ -14,6 +14,12 @@ export async function createEstudiante({estudiantes}) {
   });
 }
 
+export async function createEstudianteMasivo({estudiantes}) {
+  return apiFetch("/student-managament/estudiantes-masivo", {
+    method: "POST",
+    body: JSON.stringify({estudiantes}),
+  });
+}
 export async function updateEstudiante({ id, estudiante}) {
   console.log(estudiante);
   return apiFetch(`/student-managament/editar-estudiante/${id}`, {
