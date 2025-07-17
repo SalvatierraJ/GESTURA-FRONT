@@ -197,7 +197,7 @@ const MainContent = () => {
   const [selected, setSelected] = useState([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const { Estudiantes, cargarEstudiantes, loading, total } =
+  const { estudiantes, cargarEstudiantes, loading, total } =
     useEstudiantesStore();
   useEffect(() => {
     if (activeTab === "ExamendeGrado") cargarEstudiantes(page, pageSize);
@@ -206,7 +206,7 @@ const MainContent = () => {
     setPage(1);
     setPageSize(10);
   }, [activeTab]);
-  const filteredEstudiante = Estudiantes.filter((c) =>
+  const filteredEstudiante = estudiantes.filter((c) =>
     (c.nombre || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 

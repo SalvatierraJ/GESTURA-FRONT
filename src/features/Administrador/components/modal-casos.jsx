@@ -18,12 +18,15 @@ export default function RegistroDocumentoModal() {
   const [documentos, setDocumentos] = useState([]);
   const [touched, setTouched] = useState(false);
   const toast = useRef(null);
-  const { areas: areasAPI } = useCasosStore();
+  const { areas, cargarAreasEstudio } = useCasosStore();
   const crearCasos = useCasosStore((s) => s.crearCasos);
-  const [showNoAreas, setShowNoAreas] = useState(false);
   const fileUploadRef = useRef(null);
+  const abrirModal = () => {
+    cargarAreasEstudio(1, 100);
+    setVisible(true);
+  };
 
-  const areasDropdown = (areasAPI || []).map((f) => ({
+  const areasDropdown = (areas || []).map((f) => ({
     name: f.nombre_area,
     code: f.id_area,
   }));
@@ -203,267 +206,261 @@ export default function RegistroDocumentoModal() {
     </div>
   );
   const customHeaderTemplate = (options) => (
-     <div className="p-fileupload-buttonbar flex items-center gap-2">
-    {options.chooseButton}
-  </div>
+    <div className="p-fileupload-buttonbar flex items-center gap-2">
+      {options.chooseButton}
+    </div>
   );
 
   return (
     <div>
-      <Toast ref={toast} />
-      <Button
-        key="nuevo"
-        icon="pi pi-plus"
-        label="Subir Documentos"
-        onClick={() => {
-          if (!areasDropdown.length) {
-            setShowNoAreas(true);
-          } else {
-            setVisible(true);
-          }
-        }}
-        className="mb-4 px-6 py-3 font-bold rounded-full text-lg border-none"
-        style={{ background: "#e11d1d", color: "#fff" }}
-      />
-      <Dialog
-        header={
-          <div
-            className="flex items-center gap-2"
-            style={{
-              background: "#e11d1d",
-              color: "#fff",
-              borderRadius: "1rem 1rem 0 0",
-              padding: "1rem",
-            }}
-          >
-            <i className="pi pi-exclamation-triangle text-2xl" />
-            <span className="text-xl font-bold">¡Atención!</span>
-          </div>
-        }
-        visible={showNoAreas}
-        style={{ width: "400px", borderRadius: "1rem" }}
-        modal
-        closable={false}
-        onHide={() => setShowNoAreas(false)}
-        contentClassName="bg-white"
-        footer={
-          <div className="flex justify-end pt-2">
-            <Button
-              label="Cerrar"
-              icon="pi pi-times"
-              style={{ background: "#e11d1d", color: "#fff", border: "none" }}
-              className="font-semibold"
-              onClick={() => setShowNoAreas(false)}
-            />
-          </div>
-        }
-      >
-        <div className="text-center p-5">
-          <p className="text-lg font-semibold text-black mb-2">
-            Para subir casos, primero debe agregar al menos un área de estudio.
-          </p>
-          <p className="text-gray-700 mb-3">
-            Diríjase a la sección <b>Áreas</b> y registre un área antes de
-            continuar.
-          </p>
-          <i className="pi pi-ban text-6xl" style={{ color: "#e11d1d" }}></i>
-        </div>
-      </Dialog>
-
-      <Dialog
-        header={header}
-        visible={visible}
-        style={{
-          width: "900px", // más ancho para muchos inputs
-          maxWidth: "98vw",
-          display: "flex",
-          justifyContent: "center",
-        }}
-        modal
-        draggable={false}
-        onHide={resetModal}
-        contentClassName="bg-white rounded-b-2xl p-0"
-        className="rounded-2xl"
-      >
-        <div className="px-10 pt-7 pb-5">
-          <form
-            className="flex flex-col gap-7"
-            onSubmit={(e) => {
-              e.preventDefault();
-              onRegister();
-            }}
-          >
-            {/* Área */}
-            <div>
-              <label className="block text-black font-semibold mb-1">
-                Área <span className="text-[#e11d1d]">*</span>
-              </label>
-              <Dropdown
-                value={selectedArea}
-                options={areasDropdown}
-                onChange={(e) => setSelectedArea(e.value)}
-                optionLabel="name"
-                placeholder="Seleccione un área"
-                className="w-full border border-black rounded focus:ring-2 focus:ring-[#e11d1d]"
+      <>
+        <Toast ref={toast} />
+        <Button
+          key="nuevo"
+          icon="pi pi-plus"
+          label="Subir Documentos"
+          onClick={() => {
+            abrirModal();
+          }}
+          className="mb-4 px-6 py-3 font-bold rounded-full text-lg border-none"
+          style={{ background: "#e11d1d", color: "#fff" }}
+        />
+        <Dialog
+          header={header}
+          visible={visible}
+          style={{
+            width: "900px", // más ancho para muchos inputs
+            maxWidth: "98vw",
+            display: "flex",
+            justifyContent: "center",
+          }}
+          modal
+          draggable={false}
+          onHide={resetModal}
+          contentClassName="bg-white rounded-b-2xl p-0"
+          className="rounded-2xl"
+        >
+          {areas.length === 0 ? (
+            <div className="text-center p-5">
+              <p className="text-lg font-semibold text-black mb-2">
+                Para subir casos, primero debe agregar al menos un área de
+                estudio.
+              </p>
+              <p className="text-gray-700 mb-3">
+                Diríjase a la sección <b>Áreas</b> y registre un área antes de
+                continuar.
+              </p>
+              <i
+                className="pi pi-ban text-6xl"
                 style={{ color: "#e11d1d" }}
-                panelClassName="bg-white border-black"
-              />
-              {touched && !selectedArea && (
-                <small className="text-[#e11d1d]">Selecciona un área.</small>
-              )}
-            </div>
-
-            {/* FileUpload */}
-            <div>
-              <label className="block text-black font-semibold mb-2">
-                Documentos <span className="text-[#e11d1d]">*</span>
-              </label>
-              <FileUpload
-                ref={fileUploadRef}
-                name="file"
-                accept=".pdf,.docx"
-                maxFileSize={5_000_000}
-                multiple
-                onSelect={onSelect}
-                onError={onClear}
-                onClear={onClear}
-                customUpload={false}
-                className="w-full"
-                style={{
-                  border: "1.5px solid #e11d1d",
-                  borderRadius: "0.5rem",
-                  background: "#fff",
-                }}
-                chooseOptions={{
-                  label: "Seleccionar",
-                  icon: "pi pi-file",
-                  className:
-                    "p-button-outlined bg-white border border-[#e11d1d] text-[#e11d1d] hover:bg-[#e11d1d] hover:text-white",
-                }}
-                headerTemplate={customHeaderTemplate}
-              />
-              <div className="text-xs text-gray-400 mt-1">
-                (PDF o Word, máximo 5MB cada uno)
+              ></i>
+              <div className="flex justify-end pt-2 mt-4">
+                <Button
+                  label="Cerrar"
+                  icon="pi pi-times"
+                  style={{
+                    background: "#e11d1d",
+                    color: "#fff",
+                    border: "none",
+                  }}
+                  className="font-semibold"
+                  onClick={resetModal}
+                />
               </div>
-              {touched && documentos.length === 0 && (
-                <small className="text-[#e11d1d]">
-                  Adjunta al menos un documento.
-                </small>
-              )}
             </div>
+          ) : (
+            <div className="px-10 pt-7 pb-5">
+              <form
+                className="flex flex-col gap-7"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  onRegister();
+                }}
+              >
+                {/* Área */}
+                <div>
+                  <label className="block text-black font-semibold mb-1">
+                    Área <span className="text-[#e11d1d]">*</span>
+                  </label>
+                  <Dropdown
+                    value={selectedArea}
+                    options={areasDropdown}
+                    onChange={(e) => setSelectedArea(e.value)}
+                    optionLabel="name"
+                    placeholder="Seleccione un área"
+                    className="w-full border border-black rounded focus:ring-2 focus:ring-[#e11d1d]"
+                    style={{ color: "#e11d1d" }}
+                    panelClassName="bg-white border-black"
+                  />
+                  {touched && !selectedArea && (
+                    <small className="text-[#e11d1d]">
+                      Selecciona un área.
+                    </small>
+                  )}
+                </div>
 
-            {/* Inputs dinámicos por archivo */}
-            {documentos.length > 0 && (
-              <div className="flex flex-col gap-6">
-                {documentos.map((doc, i) => (
-                  <div
-                    key={doc.file.name + i}
-                    className="border border-black rounded-lg p-4 bg-[#f8f8f8]"
-                  >
-                    <div className="font-bold text-lg mb-3 text-[#e11d1d]">
-                      {doc.file.name}
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Título */}
-                      <div>
-                        <label className="block text-black font-semibold mb-1">
-                          Título <span className="text-[#e11d1d]">*</span>
-                        </label>
-                        <InputText
-                          value={doc.title}
-                          onChange={(e) =>
-                            updateDocumento(i, "title", e.target.value)
-                          }
-                          className="w-full border border-black rounded"
-                        />
-                        {touched && !doc.title.trim() && (
-                          <small className="text-[#e11d1d]">Obligatorio</small>
-                        )}
-                      </div>
-                      {/* Autor */}
-                      <div>
-                        <label className="block text-black font-semibold mb-1">
-                          Autor <span className="text-[#e11d1d]">*</span>
-                        </label>
-                        <InputText
-                          value={doc.author}
-                          onChange={(e) =>
-                            updateDocumento(i, "author", e.target.value)
-                          }
-                          className="w-full border border-black rounded"
-                        />
-                        {touched && !doc.author.trim() && (
-                          <small className="text-[#e11d1d]">Obligatorio</small>
-                        )}
-                      </div>
-                      {/* Tema */}
-                      <div>
-                        <label className="block text-black font-semibold mb-1">
-                          Tema <span className="text-[#e11d1d]">*</span>
-                        </label>
-                        <InputText
-                          value={doc.topic}
-                          onChange={(e) =>
-                            updateDocumento(i, "topic", e.target.value)
-                          }
-                          className="w-full border border-black rounded"
-                        />
-                        {touched && !doc.topic.trim() && (
-                          <small className="text-[#e11d1d]">Obligatorio</small>
-                        )}
-                      </div>
-                      {/* Fecha */}
-                      <div>
-                        <label className="block text-black font-semibold mb-1">
-                          Fecha de creación{" "}
-                          <span className="text-[#e11d1d]">*</span>
-                        </label>
-                        <Calendar
-                          value={doc.creationDate}
-                          onChange={(e) =>
-                            updateDocumento(i, "creationDate", e.value)
-                          }
-                          dateFormat="yy-mm-dd"
-                          showIcon
-                          className="w-full border border-black rounded"
-                        />
-                        {touched && !doc.creationDate && (
-                          <small className="text-[#e11d1d]">Obligatorio</small>
-                        )}
-                      </div>
-                    </div>
+                {/* FileUpload */}
+                <div>
+                  <label className="block text-black font-semibold mb-2">
+                    Documentos <span className="text-[#e11d1d]">*</span>
+                  </label>
+                  <FileUpload
+                    ref={fileUploadRef}
+                    name="file"
+                    accept=".pdf,.docx"
+                    maxFileSize={5_000_000}
+                    multiple
+                    onSelect={onSelect}
+                    onError={onClear}
+                    onClear={onClear}
+                    customUpload={false}
+                    className="w-full"
+                    style={{
+                      border: "1.5px solid #e11d1d",
+                      borderRadius: "0.5rem",
+                      background: "#fff",
+                    }}
+                    chooseOptions={{
+                      label: "Seleccionar",
+                      icon: "pi pi-file",
+                      className:
+                        "p-button-outlined bg-white border border-[#e11d1d] text-[#e11d1d] hover:bg-[#e11d1d] hover:text-white",
+                    }}
+                    headerTemplate={customHeaderTemplate}
+                  />
+                  <div className="text-xs text-gray-400 mt-1">
+                    (PDF o Word, máximo 5MB cada uno)
                   </div>
-                ))}
-              </div>
-            )}
+                  {touched && documentos.length === 0 && (
+                    <small className="text-[#e11d1d]">
+                      Adjunta al menos un documento.
+                    </small>
+                  )}
+                </div>
 
-            {/* Acciones */}
-            <div className="flex justify-end gap-3 pt-2 pb-2">
-              <Button
-                type="button"
-                label="Cancelar"
-                icon="pi pi-times"
-                className="p-button-text font-semibold text-black border-none"
-                onClick={resetModal}
-                style={{
-                  color: "#e11d1d",
-                }}
-              />
-              <Button
-                type="submit"
-                label="Registrar"
-                icon="pi pi-check"
-                className="font-semibold border-none"
-                style={{
-                  background: "#e11d1d",
-                  color: "#fff",
-                  boxShadow: "0 2px 12px -2px #e11d1d44",
-                }}
-              />
+                {/* Inputs dinámicos por archivo */}
+                {documentos.length > 0 && (
+                  <div className="flex flex-col gap-6">
+                    {documentos.map((doc, i) => (
+                      <div
+                        key={doc.file.name + i}
+                        className="border border-black rounded-lg p-4 bg-[#f8f8f8]"
+                      >
+                        <div className="font-bold text-lg mb-3 text-[#e11d1d]">
+                          {doc.file.name}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Título */}
+                          <div>
+                            <label className="block text-black font-semibold mb-1">
+                              Título <span className="text-[#e11d1d]">*</span>
+                            </label>
+                            <InputText
+                              value={doc.title}
+                              onChange={(e) =>
+                                updateDocumento(i, "title", e.target.value)
+                              }
+                              className="w-full border border-black rounded"
+                            />
+                            {touched && !doc.title.trim() && (
+                              <small className="text-[#e11d1d]">
+                                Obligatorio
+                              </small>
+                            )}
+                          </div>
+                          {/* Autor */}
+                          <div>
+                            <label className="block text-black font-semibold mb-1">
+                              Autor <span className="text-[#e11d1d]">*</span>
+                            </label>
+                            <InputText
+                              value={doc.author}
+                              onChange={(e) =>
+                                updateDocumento(i, "author", e.target.value)
+                              }
+                              className="w-full border border-black rounded"
+                            />
+                            {touched && !doc.author.trim() && (
+                              <small className="text-[#e11d1d]">
+                                Obligatorio
+                              </small>
+                            )}
+                          </div>
+                          {/* Tema */}
+                          <div>
+                            <label className="block text-black font-semibold mb-1">
+                              Tema <span className="text-[#e11d1d]">*</span>
+                            </label>
+                            <InputText
+                              value={doc.topic}
+                              onChange={(e) =>
+                                updateDocumento(i, "topic", e.target.value)
+                              }
+                              className="w-full border border-black rounded"
+                            />
+                            {touched && !doc.topic.trim() && (
+                              <small className="text-[#e11d1d]">
+                                Obligatorio
+                              </small>
+                            )}
+                          </div>
+                          {/* Fecha */}
+                          <div>
+                            <label className="block text-black font-semibold mb-1">
+                              Fecha de creación{" "}
+                              <span className="text-[#e11d1d]">*</span>
+                            </label>
+                            <Calendar
+                              value={doc.creationDate}
+                              onChange={(e) =>
+                                updateDocumento(i, "creationDate", e.value)
+                              }
+                              dateFormat="yy-mm-dd"
+                              showIcon
+                              className="w-full border border-black rounded"
+                            />
+                            {touched && !doc.creationDate && (
+                              <small className="text-[#e11d1d]">
+                                Obligatorio
+                              </small>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Acciones */}
+                <div className="flex justify-end gap-3 pt-2 pb-2">
+                  <Button
+                    type="button"
+                    label="Cancelar"
+                    icon="pi pi-times"
+                    className="p-button-text font-semibold text-black border-none"
+                    onClick={resetModal}
+                    style={{
+                      color: "#e11d1d",
+                    }}
+                  />
+                  <Button
+                    type="submit"
+                    label="Registrar"
+                    icon="pi pi-check"
+                    className="font-semibold border-none"
+                    style={{
+                      background: "#e11d1d",
+                      color: "#fff",
+                      boxShadow: "0 2px 12px -2px #e11d1d44",
+                    }}
+                  />
+                </div>
+              </form>
             </div>
-          </form>
-        </div>
-      </Dialog>
+          )}
+          ;
+        </Dialog>
+      </>
     </div>
   );
 }
