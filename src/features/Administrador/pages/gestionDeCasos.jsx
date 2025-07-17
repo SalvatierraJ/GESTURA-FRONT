@@ -9,7 +9,8 @@ import { useCasosStore } from "@/store/casos.store";
 import { Button } from "primereact/button";
 import { Paginator } from "primereact/paginator";
 import { useAuthStore } from "@/store/authStore";
-const FilaCasos = ({ caso }) => (
+import ModalDocumento from "@/features/Administrador/components/modal_Prev_PDF";
+const FilaCasos = ({ caso, onPreview }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{caso.id_casoEstudio}</td>
     <td className="px-4 py-3 text-sm text-gray-700">{caso.Nombre_Archivo}</td>
@@ -23,6 +24,9 @@ const FilaCasos = ({ caso }) => (
     <td className="px-4 py-3 text-center space-x-2">
       <button className="text-blue-600 hover:text-blue-800">
         <i className="fas fa-edit"></i>
+      </button>
+      <button className="text-blue-600 hover:text-blue-800" onClick={() => onPreview(caso.url)}>
+        <i className="fas fa-eye"></i>
       </button>
     </td>
   </tr>
@@ -134,6 +138,8 @@ const MainContent = () => {
   const [carreraEditar, setCarreraEditar] = useState(null);
   const roles = useAuthStore((state) => state.getRoles());
   const isAdmin = roles.some((r) => r.Nombre === "Admin");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState("");
   const {
     carreras,
     cargarCarreras,
@@ -161,7 +167,10 @@ const MainContent = () => {
 
   const [modalAreaVisible, setModalAreaVisible] = useState(false);
   const [areaAEditar, setAreaAEditar] = useState(null);
-
+  const handlePreview = (url) => {
+    setPdfUrl(url);
+    setModalVisible(true);
+  };
   useEffect(() => {
     cargarCarreras(page, pageSize);
     cargarAreasEstudio(page, pageSize);
@@ -176,7 +185,7 @@ const MainContent = () => {
   const tabs = [
     { key: "Casos", label: "Casos de Estudio" },
     { key: "Areas", label: "Areas" },
-     ...(isAdmin ? [{ key: "Carrera", label: "Carreras" }] : []),
+    ...(isAdmin ? [{ key: "Carrera", label: "Carreras" }] : []),
   ];
 
   const actions = {
@@ -207,30 +216,32 @@ const MainContent = () => {
         }}
       />,
     ],
-     ...(isAdmin && {Carrera: [
-      <InputBuscar
-        key="search"
-        value={searchTerm}
-        onChange={setSearchTerm}
-        placeholder="Buscar carrera..."
-      />,
-      <RegistrarCarrera
-        visible={modalCarreraVisible}
-        setVisible={setModalCarreraVisible}
-        carrera={carreraEditar}
-        limpiarCarreraEditar={() => setCarreraEditar(null)}
-      />,
-      <Button
-        className="mb-4 bg-red-700 text-white hover:bg-red-800"
-        style={{ backgroundColor: "#e11d1d", hover: "#b91c1c" }}
-        icon="pi pi-plus"
-        label="Registrar Carrera"
-        onClick={() => {
-          setCarreraEditar(null);
-          setModalCarreraVisible(true);
-        }}
-      />,
-    ]}),
+    ...(isAdmin && {
+      Carrera: [
+        <InputBuscar
+          key="search"
+          value={searchTerm}
+          onChange={setSearchTerm}
+          placeholder="Buscar carrera..."
+        />,
+        <RegistrarCarrera
+          visible={modalCarreraVisible}
+          setVisible={setModalCarreraVisible}
+          carrera={carreraEditar}
+          limpiarCarreraEditar={() => setCarreraEditar(null)}
+        />,
+        <Button
+          className="mb-4 bg-red-700 text-white hover:bg-red-800"
+          style={{ backgroundColor: "#e11d1d", hover: "#b91c1c" }}
+          icon="pi pi-plus"
+          label="Registrar Carrera"
+          onClick={() => {
+            setCarreraEditar(null);
+            setModalCarreraVisible(true);
+          }}
+        />,
+      ],
+    }),
   };
 
   return (
@@ -268,7 +279,7 @@ const MainContent = () => {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredCasos.map((caso) => (
-                <FilaCasos key={caso.id_casoEstudio} caso={caso} />
+                <FilaCasos key={caso.id_casoEstudio} caso={caso} onPreview={handlePreview}/>
               ))}
             </tbody>
           </table>
@@ -282,6 +293,11 @@ const MainContent = () => {
               template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
             />
           </div>
+          <ModalDocumento
+            visible={modalVisible}
+            onHide={() => setModalVisible(false)}
+            url={pdfUrl}
+          />
         </>
       )}
       {activeTab === "Areas" && (
@@ -349,7 +365,7 @@ const MainContent = () => {
           />
         </>
       )}
-      {activeTab === "Carrera" &&  isAdmin && (
+      {activeTab === "Carrera" && isAdmin && (
         <div className="w-full">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
