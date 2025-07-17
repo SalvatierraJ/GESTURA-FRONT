@@ -89,3 +89,25 @@ export async function crearCasosEstudio({ id_area, archivos }) {
     body: formData,
   });
 }
+
+export async function updateStateCasoEstudio({ id, estado }) {
+  return apiFetch(`/case-study-management/actualizar-estado-caso/${id}`, {
+    method: "PUT",
+    body: JSON.stringify({ estado }),
+  });
+}
+
+
+export async function updateCasoEstudio({ id, Titulo, Autor, Tema, Fecha_Creacion, id_area }) {
+  return apiFetch(`/case-study-management/casos/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      Titulo,
+      Autor,
+      Tema,
+      Fecha_Creacion,
+      id_area,
+    }),
+  });
+}

@@ -21,6 +21,7 @@ export default function RegistroDocumentoModal() {
   const { areas: areasAPI } = useCasosStore();
   const crearCasos = useCasosStore((s) => s.crearCasos);
   const [showNoAreas, setShowNoAreas] = useState(false);
+  const fileUploadRef = useRef(null);
 
   const areasDropdown = (areasAPI || []).map((f) => ({
     name: f.nombre_area,
@@ -201,6 +202,11 @@ export default function RegistroDocumentoModal() {
       </span>
     </div>
   );
+  const customHeaderTemplate = (options) => (
+     <div className="p-fileupload-buttonbar flex items-center gap-2">
+    {options.chooseButton}
+  </div>
+  );
 
   return (
     <div>
@@ -313,6 +319,7 @@ export default function RegistroDocumentoModal() {
                 Documentos <span className="text-[#e11d1d]">*</span>
               </label>
               <FileUpload
+                ref={fileUploadRef}
                 name="file"
                 accept=".pdf,.docx"
                 maxFileSize={5_000_000}
@@ -320,14 +327,6 @@ export default function RegistroDocumentoModal() {
                 onSelect={onSelect}
                 onError={onClear}
                 onClear={onClear}
-                chooseOptions={{
-                  label: "Seleccionar",
-                  icon: "pi pi-file",
-                  className:
-                    "p-button-outlined bg-white border border-[#e11d1d] text-[#e11d1d] hover:bg-[#e11d1d] hover:text-white",
-                }}
-                uploadOptions={false}
-                cancelOptions={false}
                 customUpload={false}
                 className="w-full"
                 style={{
@@ -335,6 +334,13 @@ export default function RegistroDocumentoModal() {
                   borderRadius: "0.5rem",
                   background: "#fff",
                 }}
+                chooseOptions={{
+                  label: "Seleccionar",
+                  icon: "pi pi-file",
+                  className:
+                    "p-button-outlined bg-white border border-[#e11d1d] text-[#e11d1d] hover:bg-[#e11d1d] hover:text-white",
+                }}
+                headerTemplate={customHeaderTemplate}
               />
               <div className="text-xs text-gray-400 mt-1">
                 (PDF o Word, máximo 5MB cada uno)

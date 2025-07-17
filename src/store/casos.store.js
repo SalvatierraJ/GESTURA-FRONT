@@ -11,6 +11,8 @@ import {
   updateStateAreaEstudio,
   crearCasosEstudio,
   fetchCasosEstudio,
+  updateStateCasoEstudio,
+  updateCasoEstudio
 } from "@/services/casos.services";
 
 export const useCasosStore = create((set) => ({
@@ -79,7 +81,6 @@ export const useCasosStore = create((set) => ({
   actualizarEstadoCarrera: async ({ id, estado }) => {
     set({ loading: true, error: null });
     try {
-      console.log("Recibido:", id, estado);
       const data = await updateStateCarrera({ id, estado });
       set((state) => ({
         carreras: state.carreras.map((carrera) =>
@@ -173,6 +174,63 @@ export const useCasosStore = create((set) => ({
       });
     } catch (error) {
       set({ error, loading: false });
+    }
+  },
+  actualizarEstadoCasoEstudio: async ({ id, estado }) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await updateStateCasoEstudio({ id, estado });
+      set((state) => ({
+        casosEstudio: state.casosEstudio.map((caso) =>
+          caso.id === id ? { ...caso, estado: data.estado } : caso
+        ),
+        loading: false,
+      }));
+    } catch (error) {
+      set({ error, loading: false });
+    }
+  },
+  actualizarCasoEstudio: async ({
+    id,
+    Titulo,
+    Autor,
+    Tema,
+    Fecha_Creacion,
+    id_area,
+    url,
+  }) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await updateCasoEstudio({
+        id,
+        Titulo,
+        Autor,
+        Tema,
+        Fecha_Creacion,
+        id_area,
+        url,
+      });
+      set((state) => ({
+        casos: state.casos.map((caso) =>
+          caso.id_casoEstudio === id
+            ? {
+                ...caso,
+                ...data,
+                Titulo,
+                Autor,
+                Tema,
+                Fecha_Creacion,
+                id_area,
+                url,
+              }
+            : caso
+        ),
+        loading: false,
+      }));
+      return data;
+    } catch (error) {
+      set({ error, loading: false });
+      throw error;
     }
   },
 }));
