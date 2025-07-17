@@ -81,7 +81,7 @@ const MainContent = () => {
       cargarDefensasInterna(page, pageSize, "Examen de grado Interna");
     else if (activeTab === "Externa")
       cargarDefensasExternas(page, pageSize, "Examen de grado Externa");
-  }, [page, pageSize, cargarDefensasInterna, cargarDefensasExternas]);
+  }, [activeTab,page, pageSize, cargarDefensasInterna, cargarDefensasExternas]);
   useEffect(() => {
     setPage(1);
     setPageSize(10);

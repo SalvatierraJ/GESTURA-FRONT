@@ -201,7 +201,7 @@ const MainContent = () => {
     useEstudiantesStore();
   useEffect(() => {
     if (activeTab === "ExamendeGrado") cargarEstudiantes(page, pageSize);
-  }, [page, pageSize, cargarEstudiantes]);
+  }, [activeTab,page, pageSize, cargarEstudiantes]);
   useEffect(() => {
     setPage(1);
     setPageSize(10);

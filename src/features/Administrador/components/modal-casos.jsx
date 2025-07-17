@@ -20,6 +20,7 @@ export default function RegistroDocumentoModal() {
   const toast = useRef(null);
   const { areas: areasAPI } = useCasosStore();
   const crearCasos = useCasosStore((s) => s.crearCasos);
+  const [showNoAreas, setShowNoAreas] = useState(false);
 
   const areasDropdown = (areasAPI || []).map((f) => ({
     name: f.nombre_area,
@@ -208,10 +209,61 @@ export default function RegistroDocumentoModal() {
         key="nuevo"
         icon="pi pi-plus"
         label="Subir Documentos"
-        onClick={() => setVisible(true)}
+        onClick={() => {
+          if (!areasDropdown.length) {
+            setShowNoAreas(true);
+          } else {
+            setVisible(true);
+          }
+        }}
         className="mb-4 px-6 py-3 font-bold rounded-full text-lg border-none"
         style={{ background: "#e11d1d", color: "#fff" }}
       />
+      <Dialog
+        header={
+          <div
+            className="flex items-center gap-2"
+            style={{
+              background: "#e11d1d",
+              color: "#fff",
+              borderRadius: "1rem 1rem 0 0",
+              padding: "1rem",
+            }}
+          >
+            <i className="pi pi-exclamation-triangle text-2xl" />
+            <span className="text-xl font-bold">¡Atención!</span>
+          </div>
+        }
+        visible={showNoAreas}
+        style={{ width: "400px", borderRadius: "1rem" }}
+        modal
+        closable={false}
+        onHide={() => setShowNoAreas(false)}
+        contentClassName="bg-white"
+        footer={
+          <div className="flex justify-end pt-2">
+            <Button
+              label="Cerrar"
+              icon="pi pi-times"
+              style={{ background: "#e11d1d", color: "#fff", border: "none" }}
+              className="font-semibold"
+              onClick={() => setShowNoAreas(false)}
+            />
+          </div>
+        }
+      >
+        <div className="text-center p-5">
+          <p className="text-lg font-semibold text-black mb-2">
+            Para subir casos, primero debe agregar al menos un área de estudio.
+          </p>
+          <p className="text-gray-700 mb-3">
+            Diríjase a la sección <b>Áreas</b> y registre un área antes de
+            continuar.
+          </p>
+          <i className="pi pi-ban text-6xl" style={{ color: "#e11d1d" }}></i>
+        </div>
+      </Dialog>
+
       <Dialog
         header={header}
         visible={visible}

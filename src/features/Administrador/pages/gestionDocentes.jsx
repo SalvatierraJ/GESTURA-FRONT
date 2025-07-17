@@ -94,7 +94,7 @@ const MainContent = () => {
   };
   useEffect(() => {
     if (activeTab === "docentes") cargarDocentes(page, pageSize);
-  }, [page, pageSize, cargarDocentes]);
+  }, [activeTab,page, pageSize, cargarDocentes]);
   useEffect(() => {
     setPage(1);
     setPageSize(10);

@@ -102,7 +102,7 @@ const MainContent = () => {
   useEffect(() => {
     if (activeTab === "Rol") cargarRoles(page, pageSize);
     else if (activeTab === "Control") loadUsers(page, pageSize);
-  }, [page, pageSize, cargarRoles, page, pageSize, loadUsers]);
+  }, [activeTab,page, pageSize, cargarRoles, page, pageSize, loadUsers]);
   useEffect(() => {
     setPage(1);
     setPageSize(10);

@@ -178,7 +178,7 @@ const MainContent = () => {
     if (activeTab === "Casos") cargarCasosEstudio(page, pageSize);
     else if (activeTab === "Areas") cargarAreasEstudio(page, pageSize);
     else if (activeTab === "Carrera") cargarCarreras(page, pageSize);
-  }, [page, pageSize, cargarCarreras, cargarAreasEstudio]);
+  }, [activeTab,page, pageSize, cargarCarreras, cargarAreasEstudio]);
   useEffect(() => {
     setPage(1);
     setPageSize(10);
