@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef} from "react";
 import { Checkbox } from "primereact/checkbox";
 import { Button } from "primereact/button";
 import ManagementLayout from "@/components/administradorContenido";
@@ -8,10 +8,12 @@ import AddAula from "@/features/Administrador/components/agregarAula";
 import AddNota from "@/features/Administrador/components/agregarNota";
 import { Paginator } from "primereact/paginator";
 import InputBuscar from "@/components/searchInput";
-
-const DefenseRow = ({ student, selected, onToggle }) => {
+ const truncarTexto = (texto, maxLength = 30) => {
+    return texto.length > maxLength ? `${texto.substring(0, maxLength)}...`  : texto;
+  };
+  const DefenseRow = ({ student, selected, onToggle }) => {
   const tieneJurados = student.jurados && student.jurados.length > 0;
-  const checked = !tieneJurados && selected.includes(student.id_defensa);
+  const checked =  selected.includes(student.id_defensa);
 
   return (
     <tr className="border-b last:border-none hover:bg-gray-50">
@@ -19,8 +21,7 @@ const DefenseRow = ({ student, selected, onToggle }) => {
         <Checkbox
           inputId={`chk-${student.id_defensa}`}
           checked={checked}
-          onChange={() => onToggle(student.id_defensa)}
-          disabled={tieneJurados}
+          onChange={() => onToggle(student.id_defensa, tieneJurados, student.jurados)}
         />
       </td>
       <td className="px-4 py-3 text-sm text-gray-700">{student.id_defensa}</td>
@@ -36,10 +37,19 @@ const DefenseRow = ({ student, selected, onToggle }) => {
       </td>
       <td className="px-4 py-3 text-sm text-gray-700">
         {tieneJurados ? (
-          student.jurados.map((j) => j.nombre).join(", ")
-        ) : (
+          truncarTexto(student.jurados.map((j) => j.nombre).join(", "))
+          
+        ): (
           <span className="italic text-gray-400">Sin jurados</span>
         )}
+        {tieneJurados && (
+  <Button
+    icon="pi pi-pencil"
+    className="p-button-sm p-button-text"
+    onClick={() =>  onToggle(student.id_defensa, tieneJurados, student.jurados, true)}
+    tooltip="Editar jurados"
+  />
+)}
       </td>
       <td className="px-4 py-3">
         {student.estado === "ASIGNADO" && (
@@ -67,6 +77,9 @@ const MainContent = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [tieneJurados, setTieneJurados] = useState(false);
+  const [juradosrray, setJuradosrray] = useState({});
+  const modalRef = useRef(null);
   const {
     defensasInterna,
     defensasExternas,
@@ -97,13 +110,53 @@ const MainContent = () => {
     setPage(event.page + 1);
     setPageSize(event.rows);
   };
-  const toggleSelect = (id_defensa) => {
-    setSelected((prev) =>
-      prev.includes(id_defensa)
+  const toggleSelect = (id_defensa, tienejurados, juradosarray, editar = false) => {
+    if(!editar){
+    setSelected((prev) => {
+      const newSelected = prev.includes(id_defensa)
         ? prev.filter((x) => x !== id_defensa)
-        : [...prev, id_defensa]
-    );
-  };
+        : [...prev, id_defensa];
+      const hayJurados = newSelected.some(id => {
+      const defensa = activeTab === "Interna"
+        ? filteredDefensa.find(d => d.id_defensa === id)
+        : filteredDefensaExterna.find(d => d.id_defensa === id);
+      return defensa?.jurados && defensa.jurados.length > 0;
+    });
+    // Construir objeto con todos los jurados de las defensas seleccionadas
+    const juradosCompletos = {};
+    newSelected.forEach(id => {
+      const defensa = activeTab === "Interna"
+        ? filteredDefensa.find(d => d.id_defensa === id)
+        : filteredDefensaExterna.find(d => d.id_defensa === id);
+      if (defensa?.jurados) {
+        juradosCompletos[id] = defensa.jurados;
+      }
+    });
+     setTieneJurados(hayJurados);
+     setJuradosrray(juradosCompletos);
+
+        return newSelected;
+      });
+    
+    }
+    else { 
+        setSelected([id_defensa]);
+  
+  const juradosCompletos = {};
+  if (juradosarray && juradosarray.length > 0) {
+    juradosCompletos[id_defensa] = juradosarray;
+  }
+  
+  setTieneJurados(tienejurados);
+  setJuradosrray(juradosCompletos);
+  
+    setTimeout(() => {
+  let botonModal = document.querySelectorAll("#root > div > div > div > div > div.p-6.flex.flex-col.flex-1.overflow-auto > div > div.flex.items-center.justify-between.px-6.py-4.border-b.border-gray-200 > div > button");
+  if (botonModal.length > 0) {
+    botonModal[0].click();
+  }
+}, 100);
+  } };
 
   const actions = [
     <InputBuscar
@@ -113,16 +166,25 @@ const MainContent = () => {
       placeholder="Buscar Estudiante.."
     />,
     <ModalAsignarJurados
+    ref={modalRef}
       defensasIds={selected}
+      key={"AsignarModal"}
       triggerLabel="Asignar Jurados"
       onSubmit={(data) => {
         console.log(data);
       }}
+      juradosBool={tieneJurados}
       onSuccess={() => {
-        if (activeTab === "Interna") cargarDefensasInterna(page, pageSize);
-        else if (activeTab === "Externa")
+        if (activeTab === "Interna") {
+          cargarDefensasInterna(page, pageSize, "Examen de grado Interna");
+        } else if (activeTab === "Externa") {
           cargarDefensasExternas(page, pageSize, "Examen de grado Externa");
+        }
+        setSelected([]);
+        setTieneJurados(false);
+        setJuradosrray({});
       }}
+      Jurados={juradosrray}
     />,
   ];
   const tabs = [
@@ -187,6 +249,7 @@ const MainContent = () => {
                   selected={selected}
                   onToggle={toggleSelect}
                   AddAula={AddAula}
+                  SetTieneJurados={setTieneJurados}
                 />
               ))}
             </tbody>
