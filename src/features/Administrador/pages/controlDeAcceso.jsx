@@ -12,7 +12,7 @@ const Usuarios = ({ user, abrirModalEditar }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{user.id}</td>
     <td className="px-4 py-3 text-sm text-gray-700">
-      {user.nombres ? user.nombre : "Sin nombre"}
+      {user.nombres ? user.nombres : "Sin nombre"}
     </td>
     <td className="px-4 py-3 text-sm text-gray-700">
       {user.correo ? user.correo : "sin correo"}

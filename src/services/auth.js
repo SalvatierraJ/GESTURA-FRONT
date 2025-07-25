@@ -22,3 +22,10 @@ export async function updateProfile(body) {
       body: JSON.stringify(body)
 
   }); } 
+
+
+  export async function searchPeople(query) {
+  return apiFetch(`/auth/search-people/${encodeURIComponent(query)}`, {
+    method: "GET",
+  });
+}

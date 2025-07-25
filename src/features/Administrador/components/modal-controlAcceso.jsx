@@ -1,10 +1,17 @@
-import React, { useEffect, useState, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useEffect,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { Dialog } from "primereact/dialog";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
 import { MultiSelect } from "primereact/multiselect";
 import { useRolStore } from "@/store/roles.store";
 import { useUserStore } from "@/store/users.store";
+import { useCasosStore } from "@/store/casos.store";
+import { useAuthStore } from "@/store/authStore";
 
 const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
   const [visible, setVisible] = useState(false);
@@ -15,12 +22,38 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
   const { roles, cargarRoles } = useRolStore();
   const registerUser = useUserStore((state) => state.registerUser);
   const updateUser = useUserStore((state) => state.updateUser);
+  const { carreras, cargarCarreras } = useCasosStore();
+
+  const [personQuery, setPersonQuery] = useState("");
+  const [selectedPersona, setSelectedPersona] = useState(null);
+  const { results, searchPeople, clear } = useAuthStore();
+
+  const handleSelectPerson = (p) => {
+    setSelectedPersona(p);
+    setPersonQuery(`${p.Nombre} ${p.Apellido1} ${p.Apellido2} (${p.CI})`);
+    clear();
+  };
+  useEffect(() => {
+    if (!visible || isEdit) return;
+    if (!personQuery) {
+      clear();
+      return;
+    }
+    const handler = setTimeout(() => {
+      searchPeople(personQuery);
+    }, 450);
+    return () => clearTimeout(handler);
+  }, [personQuery, visible, isEdit]);
+  useEffect(() => {
+    cargarRoles(1, 100);
+    cargarCarreras(1, 100);
+  }, [cargarRoles, cargarCarreras]);
 
   useImperativeHandle(ref, () => ({
     openForCreate: () => {
       setIsEdit(false);
       setEditingUserId(null);
-      setForm({ correo: "", password: "", roles: [] });
+      setForm({ correo: "", password: "", roles: [], carreras: [] });
       setTouched({});
       setVisible(true);
     },
@@ -28,9 +61,10 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
       setIsEdit(true);
       setEditingUserId(usuario.id);
       setForm({
-        correo: "",
+        correo: usuario.username ? usuario.username : "sin usaurio",
         password: "",
         roles: usuario.roles?.map((rol) => rol.id) || [],
+        carreras: usuario.carreras?.map((c) => c.id) || [],
       });
       setTouched({});
       setVisible(true);
@@ -45,8 +79,13 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
     correo: "",
     password: "",
     roles: [],
+    carreras: [],
   });
   const [touched, setTouched] = useState({});
+  const isEstudiante = form.roles.some(
+    (rolId) =>
+      roles.find((r) => r.id === rolId)?.nombre.toLowerCase() === "estudiante"
+  );
 
   const handleInput = (key, value) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -57,11 +96,7 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
     e.preventDefault();
     setTouched({ correo: true, password: true, roles: true });
 
-    if (
-      (!isEdit && !form.correo.trim()) ||
-      form.roles.length === 0
-    )
-      return;
+    if ((!isEdit && !form.correo.trim()) || form.roles.length === 0) return;
 
     setLoading(true);
     setError("");
@@ -71,16 +106,19 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
           Nombre_Usuario: form.correo.trim() || undefined,
           Password: form.password.trim() || undefined,
           Id_Rol: form.roles,
+          carreras: isEstudiante ? [] : form.carreras,
         });
       } else {
         await registerUser({
           Nombre_Usuario: form.correo,
           Password: form.password,
           Id_Rol: form.roles,
+          carreras: isEstudiante ? [] : form.carreras,
+          id_persona: selectedPersona?.Id_Persona || undefined,
         });
       }
       setVisible(false);
-      setForm({ correo: "", password: "", roles: [] });
+      setForm({ correo: "", password: "", roles: [], carreras: [] });
       setTouched({});
       if (onSubmit) onSubmit();
     } catch (err) {
@@ -103,7 +141,11 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
       }}
     >
       <div className="flex items-center gap-3">
-        <i className={`pi pi-user-${isEdit ? "edit" : "plus"} text-2xl text-white`} />
+        <i
+          className={`pi pi-user-${
+            isEdit ? "edit" : "plus"
+          } text-2xl text-white`}
+        />
         <span className="text-2xl font-extrabold tracking-wide text-white">
           {isEdit ? "Editar Usuario" : "Registrar Usuario"}
         </span>
@@ -135,23 +177,77 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
           className="px-7 pt-6 pb-3 flex flex-col gap-6"
           onSubmit={handleSubmit}
         >
+          {!isEdit && (
+            <div>
+              <label className="block text-black font-semibold mb-1">
+                Buscar persona existente
+              </label>
+              <InputText
+                value={personQuery}
+                onChange={(e) => {
+                  setPersonQuery(e.target.value);
+                  setSelectedPersona(null); // Borra selección al escribir
+                }}
+                className="w-full border-black rounded"
+                placeholder="Buscar por nombre, CI, correo, etc."
+                disabled={loading}
+                autoComplete="off"
+              />
+              {personQuery && !selectedPersona && results.length > 0 && (
+                <ul className="bg-white shadow rounded mt-1 max-h-40 overflow-auto border z-20 absolute w-full">
+                  {results.map((p) => (
+                    <li
+                      key={p.Id_Persona}
+                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
+                      onClick={() => handleSelectPerson(p)}
+                    >
+                      {p.Nombre} {p.Apellido1} {p.Apellido2} — {p.CI}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {loading && (
+                <div className="text-xs text-gray-500 mt-1">Buscando...</div>
+              )}
+              {personQuery && !loading && results.length === 0 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  No se encontraron coincidencias.
+                </div>
+              )}
+              {selectedPersona && (
+                <div className="mt-1 text-xs text-green-700">
+                  Seleccionado: {selectedPersona.Nombre}{" "}
+                  {selectedPersona.Apellido1} {selectedPersona.Apellido2} (
+                  {selectedPersona.CI})
+                </div>
+              )}
+            </div>
+          )}
           <div>
             <label className="block text-black font-semibold mb-1">
-              Correo {isEdit ? "" : <span className="text-[#e11d1d]">*</span>}
+              Usuario {isEdit ? "" : <span className="text-[#e11d1d]">*</span>}
             </label>
             <InputText
               value={form.correo}
               onChange={(e) => handleInput("correo", e.target.value)}
               className={`w-full border-black rounded ${
-                touched.correo && !form.correo.trim() && !isEdit ? "p-invalid" : ""
+                touched.correo && !form.correo.trim() && !isEdit
+                  ? "p-invalid"
+                  : ""
               }`}
               onBlur={() => setTouched((t) => ({ ...t, correo: true }))}
-              placeholder={isEdit ? "Dejar en blanco para mantener el correo" : "ejemplo@correo.com"}
+              placeholder={
+                isEdit
+                  ? "Dejar en blanco para mantener el correo"
+                  : "Nombre Usuario o Email"
+              }
               autoComplete="off"
               disabled={loading}
             />
             {isEdit && (
-              <small className="text-gray-600">Dejar en blanco para mantener el correo actual.</small>
+              <small className="text-gray-600">
+                Dejar en blanco para mantener el correo actual.
+              </small>
             )}
             {touched.correo && !form.correo.trim() && !isEdit && (
               <small className="text-[#e11d1d]">
@@ -161,22 +257,31 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
           </div>
           <div>
             <label className="block text-black font-semibold mb-1">
-              Contraseña {isEdit ? "" : <span className="text-[#e11d1d]">*</span>}
+              Contraseña{" "}
+              {isEdit ? "" : <span className="text-[#e11d1d]">*</span>}
             </label>
             <InputText
               value={form.password}
               onChange={(e) => handleInput("password", e.target.value)}
               className={`w-full border-black rounded ${
-                touched.password && !form.password.trim() && !isEdit ? "p-invalid" : ""
+                touched.password && !form.password.trim() && !isEdit
+                  ? "p-invalid"
+                  : ""
               }`}
               onBlur={() => setTouched((t) => ({ ...t, password: true }))}
-              placeholder={isEdit ? "Dejar en blanco para mantener la contraseña" : "Contraseña"}
+              placeholder={
+                isEdit
+                  ? "Dejar en blanco para mantener la contraseña"
+                  : "Contraseña"
+              }
               type="password"
               autoComplete="new-password"
               disabled={loading}
             />
             {isEdit && (
-              <small className="text-gray-600">Dejar en blanco para mantener la contraseña actual.</small>
+              <small className="text-gray-600">
+                Dejar en blanco para mantener la contraseña actual.
+              </small>
             )}
             {touched.password && !form.password.trim() && !isEdit && (
               <small className="text-[#e11d1d]">
@@ -211,8 +316,49 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
             )}
           </div>
           {error && (
-            <div className="text-[#e11d1d] text-center font-medium mt-1">{error}</div>
+            <div className="text-[#e11d1d] text-center font-medium mt-1">
+              {error}
+            </div>
           )}
+
+          {!isEstudiante && (
+            <div>
+              <label className="block text-black font-semibold mb-1">
+                Carreras Administradas
+              </label>
+              <MultiSelect
+                value={form.carreras}
+                options={carreras.map((c) => ({
+                  label: c.nombre_carrera,
+                  value: c.id_carrera,
+                }))}
+                onChange={(e) => setForm((f) => ({ ...f, carreras: e.value }))}
+                optionLabel="label"
+                placeholder="Selecciona una o más carreras"
+                className="w-full border-black rounded"
+                display="chip"
+                disabled={loading}
+              />
+              {touched.carreras && form.carreras.length === 0 && (
+                <small className="text-[#e11d1d]">
+                  Selecciona al menos una carrera.
+                </small>
+              )}
+            </div>
+          )}
+          {isEstudiante && (
+            <div>
+              <label className="block text-black font-semibold mb-1">
+                Carreras Administradas
+              </label>
+              <InputText
+                value="El rol de estudiante no administra carreras."
+                disabled
+                className="w-full"
+              />
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-2 pb-2">
             <Button
               type="button"
@@ -225,7 +371,15 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
             />
             <Button
               type="submit"
-              label={loading ? (isEdit ? "Actualizando..." : "Registrando...") : (isEdit ? "Actualizar" : "Registrar")}
+              label={
+                loading
+                  ? isEdit
+                    ? "Actualizando..."
+                    : "Registrando..."
+                  : isEdit
+                  ? "Actualizar"
+                  : "Registrar"
+              }
               icon="pi pi-check"
               className="font-semibold border-none"
               style={{

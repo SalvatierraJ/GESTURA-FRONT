@@ -6,7 +6,6 @@ import { Checkbox } from "primereact/checkbox";
 import { MultiSelect } from "primereact/multiselect";
 import { FaChevronDown, FaChevronRight } from "react-icons/fa";
 import { useRolStore } from "@/store/roles.store";
-import { useCasosStore } from "@/store/casos.store";
 import { Toast } from "primereact/toast";
 
 export default function ModalRolCascada({
@@ -20,18 +19,15 @@ export default function ModalRolCascada({
   const [controlTotal, setControlTotal] = useState(false);
   const [modPermisos, setModPermisos] = useState({});
   const [openModules, setOpenModules] = useState({});
-  const [selectedCarreras, setSelectedCarreras] = useState([]);
   const [saving, setSaving] = useState(false);
   const toast = useRef(null);
   const isEstudiante = roleName.trim().toLowerCase() === "estudiante";
   const isEdit = !!initialData;
   const { modulos, permisos, cargarModulos, cargarPermisos } = useRolStore();
-  const { carreras, cargarCarreras } = useCasosStore();
 
   useEffect(() => {
     cargarModulos();
     cargarPermisos();
-    cargarCarreras(1, 100);
   }, [cargarModulos, cargarPermisos]);
 
   useEffect(() => {
@@ -59,8 +55,6 @@ export default function ModalRolCascada({
       } else {
         setModPermisos({});
       }
-      const idsCarreras = initialData?.carreras?.map((c) => c.id) || [];
-      setSelectedCarreras(idsCarreras);
       setControlTotal(initialData?.esTotal || false);
     }
   }, [visible, initialData]);
@@ -140,7 +134,6 @@ export default function ModalRolCascada({
 
     const payload = {
       nombre: roleName,
-      carreras: selectedCarreras,
       modulosPermisos,
       esTotal: controlTotal,
       ...(initialData?.id && { id: initialData.id }),
@@ -207,31 +200,6 @@ export default function ModalRolCascada({
                   disabled={saving}
                 />
               </div>
-
-              <div>
-                <label className="font-semibold">Carreras Administradas</label>
-                <MultiSelect
-                  value={selectedCarreras}
-                  options={carreras.map((c) => ({
-                    label: c.nombre_carrera,
-                    value: c.id_carrera,
-                    nombre: c.nombre_carrera,
-                  }))}
-                  onChange={(e) => setSelectedCarreras(e.value)}
-                  display="chip"
-                  placeholder="Seleccionar carreras"
-                  optionLabel="label"
-                  className="w-full"
-                  disabled={isEdit && isEstudiante || saving}
-                />
-                {isEdit && isEstudiante && (
-                  <small className="text-gray-500">
-                    El rol de estudiante no administra carreras.
-                  </small>
-                )}
-              </div>
-
-              
 
               <div className="border rounded p-4 bg-gray-50">
                 {modulos.map((mod) => (
