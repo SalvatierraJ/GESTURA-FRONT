@@ -19,6 +19,7 @@ export default function usePensumProgramacion() {
     { label: "19:30-21:30", turno: "NOCHE", extra: "SEMI-PRESENCIAL" },
     { label: "19:15-21:45", turno: "NOCHE", extra: "" },
   ];
+  const MODULOS = [0, 1, 2, 3, 4, 5];
   const estudiante = pensum?.[0]?.estudiante;
   const materias = pensum?.[0]?.materias || [];
   const materiasPorSemestre = {};
@@ -208,6 +209,7 @@ export default function usePensumProgramacion() {
     nombreCompleto,
     pensum,
     handleRegistrarMaterias,
-    loadingRegistrar
+    loadingRegistrar,
+    MODULOS
   };
 }

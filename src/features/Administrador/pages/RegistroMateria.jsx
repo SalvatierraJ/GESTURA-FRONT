@@ -36,6 +36,7 @@ export default function PensumEstudiante() {
     pensum,
     handleRegistrarMaterias,
     loadingRegistrar,
+    MODULOS
   } = usePensumProgramacion();
   const [activeTab, setActiveTab] = useState("Pensum");
 
@@ -157,6 +158,7 @@ export default function PensumEstudiante() {
                     limiteAlcanzado={limiteAlcanzado}
                     accordion={accordion}
                     setAccordion={setAccordion}
+                    MODULOS={MODULOS}
                   />
                 )}
               </div>
