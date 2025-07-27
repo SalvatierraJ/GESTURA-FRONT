@@ -15,6 +15,7 @@ export default function ModalAsignarJurados({
   className = "",
   juradosBool, 
   Jurados,
+  TituloModal
 }) {
   const [visible, setVisible] = useState(false);
   const [selectedJurados, setSelectedJurados] = useState([]);
@@ -110,7 +111,7 @@ useEffect(() => {
       }}
     >
       <span className="text-xl font-bold text-white mx-auto">
-        Asignar Jurados
+      {TituloModal}
       </span>
       <button
         className="text-white text-3xl font-bold opacity-80 hover:opacity-100 transition-all px-1 Nosolute right-5"
@@ -199,7 +200,7 @@ useEffect(() => {
             {/* Switch de sorteo */}
              
             <div className="flex items-center gap-3">
-               {!juradosBool ? ( <>
+               {TituloModal != "Editar Jurados" && ( <>
               <InputSwitch
                 checked={sorteo}
                 onChange={(e) => setSorteo(e.value)}
@@ -209,12 +210,12 @@ useEffect(() => {
             
               <label className="font-semibold text-gray-800 text-base select-none">
                 Sorteo Automático de Jurados
-              </label> </>) : "" } 
+              </label> </>) } 
             </div>
             {sorteo && (
               <div className="text-xs text-[#e11d1d] ml-2">
                 El sistema sorteará automáticamente los jurados.
-              </div>
+              </div> 
             )}
 
             {/* MultiSelect de jurados */}

@@ -13,16 +13,17 @@ import InputBuscar from "@/components/searchInput";
   };
   const DefenseRow = ({ student, selected, onToggle }) => {
   const tieneJurados = student.jurados && student.jurados.length > 0;
-  const checked =  selected.includes(student.id_defensa);
+  const checked =   selected.includes(student.id_defensa);
 
   return (
     <tr className="border-b last:border-none hover:bg-gray-50">
       <td className="px-4 py-3">
+        {!tieneJurados && (
         <Checkbox
           inputId={`chk-${student.id_defensa}`}
           checked={checked}
-          onChange={() => onToggle(student.id_defensa, tieneJurados, student.jurados)}
-        />
+          onChange={() => onToggle(student.id_defensa, tieneJurados, student.jurados)} 
+        /> )}
       </td>
       <td className="px-4 py-3 text-sm text-gray-700">{student.id_defensa}</td>
       <td className="px-4 py-3 text-sm text-gray-700">{student.estudiante}</td>
@@ -46,7 +47,7 @@ import InputBuscar from "@/components/searchInput";
   <Button
     icon="pi pi-pencil"
     className="p-button-sm p-button-text"
-    onClick={() =>  onToggle(student.id_defensa, tieneJurados, student.jurados, true)}
+    onClick={() =>  onToggle(student.id_defensa, tieneJurados, student.jurados, true, "Editar jurados")}
     tooltip="Editar jurados"
   />
 )}
@@ -79,6 +80,7 @@ const MainContent = () => {
   const [pageSize, setPageSize] = useState(10);
   const [tieneJurados, setTieneJurados] = useState(false);
   const [juradosrray, setJuradosrray] = useState({});
+  const [tituloModal, setTituloModal] = useState("Asignar Jurados");
   const modalRef = useRef(null);
   const {
     defensasInterna,
@@ -110,7 +112,13 @@ const MainContent = () => {
     setPage(event.page + 1);
     setPageSize(event.rows);
   };
-  const toggleSelect = (id_defensa, tienejurados, juradosarray, editar = false) => {
+  const toggleSelect = (id_defensa, tienejurados, juradosarray, editar = false ) => {
+    // Resetear estados antes de cada operación
+    setTieneJurados(false);
+    setJuradosrray({});
+    setSelected([]);
+    
+    setTituloModal(editar ? "Editar Jurados ":  "Asignar Jurados");
     if(!editar){
     setSelected((prev) => {
       const newSelected = prev.includes(id_defensa)
@@ -185,6 +193,7 @@ const MainContent = () => {
         setJuradosrray({});
       }}
       Jurados={juradosrray}
+      TituloModal={tituloModal}
     />,
   ];
   const tabs = [
