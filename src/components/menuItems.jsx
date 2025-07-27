@@ -37,6 +37,12 @@ export const sidebarOptions = [
     to: "/home/defensas",
     roles: ["Admin", "jefe"],
   },
+    {
+    iconClass: "fa fa-address-card",
+    label: "Programar Materias",
+    to: "/home/registro-materia",
+    roles: ["Admin", "jefe"],
+  },
   {
     type: "section",
     label: "Reportes",
@@ -49,7 +55,7 @@ export const sidebarOptions = [
   },
   {
     iconClass: "fas fa-chart-bar",
-    label: "Reportes",
+    label: "Vista de Sorteo",
     to: "/estudiante/prototipo",
     roles: ["Estudiante"],
   },
@@ -62,7 +68,7 @@ export const sidebarOptions = [
   // Compartidas
   {
     iconClass: "fas fa-file-alt",
-    label: "Plantillas Generadas",
+    label: "Documentos Generados",
     to: "/home/plantillasGeneradas",
     roles: ["Admin", "jefe"],
   },

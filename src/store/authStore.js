@@ -1,8 +1,10 @@
 import { create } from "zustand";
-import { updateProfile } from "../services/auth";
+import { updateProfile, searchPeople } from "../services/auth";
 export const useAuthStore = create((set, get) => ({
   user: null,
   token: null,
+  results: [],
+  loading: false,
 
   setAuth: (user, token) => set({ user, token }),
 
@@ -42,21 +44,45 @@ export const useAuthStore = create((set, get) => ({
     );
   },
   updateProfile: async (body) => {
-  set({ loading: true, error: null });
-  try {
-    const response = await updateProfile(body);
-    if (response.access_token) {
-      localStorage.setItem("access_token", response.access_token);
-      set({ user: response.data, token: response.access_token, loading: false });
-    } else {
-      set({ user: response.data, loading: false });
+    set({ loading: true, error: null });
+    try {
+      const response = await updateProfile(body);
+      if (response.access_token) {
+        localStorage.setItem("access_token", response.access_token);
+        set({
+          user: response.data,
+          token: response.access_token,
+          loading: false,
+        });
+      } else {
+        set({ user: response.data, loading: false });
+      }
+      return { success: true, data: response.data };
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Error al actualizar el perfil";
+      set({ error: errorMessage, loading: false });
+      return { success: false, error: errorMessage };
     }
-    return { success: true, data: response.data };
-  } catch (error) {
-    const errorMessage = error.response?.data?.message || 'Error al actualizar el perfil';
-    set({ error: errorMessage, loading: false });
-    return { success: false, error: errorMessage };
-  }
-}
-
+  },
+  searchPeople: async (query) => {
+    if (!query || query.length < 2) {
+      set({ results: [], loading: false, peopleError: null });
+      return [];
+    }
+    set({ loading: true, peopleError: null });
+    try {
+      const results = await searchPeople(query);
+      set({ results: results, loading: false });
+      return results;
+    } catch (error) {
+      set({
+        results: [],
+        loading: false,
+        peopleError: error.message || "Error en búsqueda",
+      });
+      return [];
+    }
+  },
+  clear: () => set({ results: [] }),
 }));
