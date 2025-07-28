@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Login from "@/layout/login";
 import Home from "@/layout/mainLayout";
 import Docente from "@/features/Administrador/pages/gestionDocentes";
@@ -76,7 +76,16 @@ function App() {
 
   return (
     <>
-
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: "#363636",
+            color: "#fff",
+          },
+        }}
+      />
       <Routes>
         <Route element={<PublicRoute />}>
           <Route path="/" element={<Login />} />
