@@ -34,6 +34,7 @@ useEffect(() => {
       if (Array.isArray(juradosDeDefensa)) {
         juradosAsignados.push(...juradosDeDefensa);
       }
+      
     });
     const juradosUnicos = juradosAsignados.filter((jurado, index, self) => 
       index === self.findIndex(j => (j.id || j.id_tribunal) === (jurado.id || jurado.id_tribunal))

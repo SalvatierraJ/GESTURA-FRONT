@@ -34,12 +34,12 @@ export default function ModalNotaDefensa({ id_defensa, notaActual, onSuccess }) 
   return (
     <>
       <Toast ref={toast} />
-      <Button
-        icon="pi pi-pencil"
-        className="p-button-sm p-button-text"
-        onClick={() => setVisible(true)}
-        tooltip="Agregar o editar nota"
-      />
+        <Button
+          icon="pi pi-pencil"
+          className="p-button-sm p-button-text"
+          onClick={() => setVisible(true)}
+          tooltip="Agregar o editar nota"
+        />
       <Dialog
         header="Agregar Nota"
         visible={visible}
