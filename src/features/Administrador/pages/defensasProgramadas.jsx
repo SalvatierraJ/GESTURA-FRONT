@@ -22,13 +22,12 @@ const DefenseRow = ({ student, selected, onToggle }) => {
   return (
     <tr className="border-b last:border-none hover:bg-gray-50">
       <td className="px-4 py-3">
+        {!tieneJurados && (
         <Checkbox
           inputId={`chk-${student.id_defensa}`}
           checked={checked}
-          onChange={() =>
-            onToggle(student.id_defensa, tieneJurados, student.jurados)
-          }
-        />
+          onChange={() => onToggle(student.id_defensa, tieneJurados, student.jurados)} 
+        /> )}
       </td>
       <td className="px-4 py-3 text-sm text-gray-700">{student.id_defensa}</td>
       <td className="px-4 py-3 text-sm text-gray-700">{student.estudiante}</td>
@@ -52,15 +51,13 @@ const DefenseRow = ({ student, selected, onToggle }) => {
           <span className="italic text-gray-400">Sin jurados</span>
         )}
         {tieneJurados && (
-          <Button
-            icon="pi pi-pencil"
-            className="p-button-sm p-button-text"
-            onClick={() =>
-              onToggle(student.id_defensa, tieneJurados, student.jurados, true)
-            }
-            tooltip="Editar jurados"
-          />
-        )}
+  <Button
+    icon="pi pi-pencil"
+    className="p-button-sm p-button-text"
+    onClick={() =>  onToggle(student.id_defensa, tieneJurados, student.jurados, true, "Editar jurados")}
+    tooltip="Editar jurados"
+  />
+)}
       </td>
       <td className="px-4 py-3">
         {student.estado === "ASIGNADO" && (
@@ -90,6 +87,7 @@ const MainContent = () => {
   const [pageSize, setPageSize] = useState(10);
   const [tieneJurados, setTieneJurados] = useState(false);
   const [juradosrray, setJuradosrray] = useState({});
+  const [tituloModal, setTituloModal] = useState("Asignar Jurados");
   const modalRef = useRef(null);
   const {
     defensasInterna,
@@ -127,37 +125,36 @@ const MainContent = () => {
     setPage(event.page + 1);
     setPageSize(event.rows);
   };
-  const toggleSelect = (
-    id_defensa,
-    tienejurados,
-    juradosarray,
-    editar = false
-  ) => {
-    if (!editar) {
-      setSelected((prev) => {
-        const newSelected = prev.includes(id_defensa)
-          ? prev.filter((x) => x !== id_defensa)
-          : [...prev, id_defensa];
-        const hayJurados = newSelected.some((id) => {
-          const defensa =
-            activeTab === "Interna"
-              ? filteredDefensa.find((d) => d.id_defensa === id)
-              : filteredDefensaExterna.find((d) => d.id_defensa === id);
-          return defensa?.jurados && defensa.jurados.length > 0;
-        });
-        // Construir objeto con todos los jurados de las defensas seleccionadas
-        const juradosCompletos = {};
-        newSelected.forEach((id) => {
-          const defensa =
-            activeTab === "Interna"
-              ? filteredDefensa.find((d) => d.id_defensa === id)
-              : filteredDefensaExterna.find((d) => d.id_defensa === id);
-          if (defensa?.jurados) {
-            juradosCompletos[id] = defensa.jurados;
-          }
-        });
-        setTieneJurados(hayJurados);
-        setJuradosrray(juradosCompletos);
+  const toggleSelect = (id_defensa, tienejurados, juradosarray, editar = false ) => {
+    // Resetear estados antes de cada operación
+    setTieneJurados(false);
+    setJuradosrray({});
+    setSelected([]);
+    
+    setTituloModal(editar ? "Editar Jurados ":  "Asignar Jurados");
+    if(!editar){
+    setSelected((prev) => {
+      const newSelected = prev.includes(id_defensa)
+        ? prev.filter((x) => x !== id_defensa)
+        : [...prev, id_defensa];
+      const hayJurados = newSelected.some(id => {
+      const defensa = activeTab === "Interna"
+        ? filteredDefensa.find(d => d.id_defensa === id)
+        : filteredDefensaExterna.find(d => d.id_defensa === id);
+      return defensa?.jurados && defensa.jurados.length > 0;
+    });
+    // Construir objeto con todos los jurados de las defensas seleccionadas
+    const juradosCompletos = {};
+    newSelected.forEach(id => {
+      const defensa = activeTab === "Interna"
+        ? filteredDefensa.find(d => d.id_defensa === id)
+        : filteredDefensaExterna.find(d => d.id_defensa === id);
+      if (defensa?.jurados) {
+        juradosCompletos[id] = defensa.jurados;
+      }
+    });
+     setTieneJurados(hayJurados);
+     setJuradosrray(juradosCompletos);
 
         return newSelected;
       });
@@ -210,6 +207,7 @@ const MainContent = () => {
         setJuradosrray({});
       }}
       Jurados={juradosrray}
+      TituloModal={tituloModal}
     />,
   ];
   const tabs = [

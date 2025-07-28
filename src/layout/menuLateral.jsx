@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { sidebarOptions } from "@/components/menuItems";
+import { useAuth0 } from "@auth0/auth0-react";
 
 const SidebarItem = ({ iconClass, label, to }) => {
   const location = useLocation();
@@ -24,8 +25,12 @@ const SidebarItem = ({ iconClass, label, to }) => {
 };
 
 const Sidebar = () => {
-  const getAvailableModules = useAuthStore((state) => state.getAvailableModules);
-  const availableModules = getAvailableModules().map(m => m.toLowerCase());
+  const { logout: auth0Logout, isAuthenticated } = useAuth0();
+
+  const getAvailableModules = useAuthStore(
+    (state) => state.getAvailableModules
+  );
+  const availableModules = getAvailableModules().map((m) => m.toLowerCase());
   const logout = useAuthStore((state) => state.logout);
   const navigate = useNavigate();
 
@@ -34,7 +39,15 @@ const Sidebar = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/", { replace: true });
+    if (isAuthenticated) {
+      auth0Logout({
+        logoutParams: {
+          returnTo: window.location.origin,
+        },
+      });
+    } else {
+      navigate("/", { replace: true });
+    }
   };
 
   return (
@@ -90,8 +103,13 @@ const Sidebar = () => {
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
           <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-xs flex flex-col items-center animate-fadeIn">
             <i className="fas fa-exclamation-triangle text-4xl text-red-600 mb-3"></i>
-            <div className="text-lg font-semibold mb-2 text-gray-900 text-center">¿Deseas cerrar sesión?</div>
-            <div className="text-gray-600 text-sm mb-6 text-center">Tu sesión se cerrará y tendrás que volver a iniciar sesión para acceder nuevamente.</div>
+            <div className="text-lg font-semibold mb-2 text-gray-900 text-center">
+              ¿Deseas cerrar sesión?
+            </div>
+            <div className="text-gray-600 text-sm mb-6 text-center">
+              Tu sesión se cerrará y tendrás que volver a iniciar sesión para
+              acceder nuevamente.
+            </div>
             <div className="flex gap-4 w-full">
               <button
                 onClick={() => setShowConfirm(false)}
@@ -102,7 +120,7 @@ const Sidebar = () => {
               <button
                 onClick={() => {
                   setShowConfirm(false);
-                  setTimeout(handleLogout, 100); 
+                  setTimeout(handleLogout, 100);
                 }}
                 className="flex-1 px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-semibold shadow"
               >
