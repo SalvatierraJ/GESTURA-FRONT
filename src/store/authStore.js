@@ -116,7 +116,6 @@ export const useAuthStore = create((set, get) => ({
   },
   clear: () => set({ results: [] }),
 
-  // Funciones para manejar perfil incompleto
   setShowIncompleteProfile: (show) => set({ showIncompleteProfile: show }),
 
   hideIncompleteProfileNotification: () =>
