@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { usePensumStore } from "@/store/materia.store";
 
@@ -93,57 +93,71 @@ export default function usePensumProgramacion() {
       return horasSolapan(startA, endA, startB, endB);
     });
   }
-  function handleAddToCart(mat, horarioIdx) {
-    const horario = mat.horariosAbiertos[horarioIdx];
-    const moduloInicio = horario.modulo_inicio ?? 0;
-    const moduloFin = horario.bimodular
-      ? horario.modulo_fin ?? moduloInicio + 1
-      : moduloInicio;
-    const [hInicio, hFin] = horario.horario.split("-").map((x) => x.trim());
-    if (
-      hayConflicto(
-        horario,
-        moduloInicio,
-        moduloFin,
-        parseHora(hInicio),
-        parseHora(hFin)
-      )
-    ) {
-      toast.error(
-        "¡No puedes agregar esta materia! Hay conflicto de horario o módulo con otra materia en tu carrito."
+  const handleAddToCart = useCallback(
+    (mat, horarioIdx) => {
+      const horario = mat.horariosAbiertos[horarioIdx];
+      const moduloInicio = horario.modulo_inicio ?? 0;
+      const moduloFin = horario.bimodular
+        ? horario.modulo_fin ?? moduloInicio + 1
+        : moduloInicio;
+      const [hInicio, hFin] = horario.horario.split("-").map((x) => x.trim());
+      if (
+        hayConflicto(
+          horario,
+          moduloInicio,
+          moduloFin,
+          parseHora(hInicio),
+          parseHora(hFin)
+        )
+      ) {
+        toast.error(
+          "¡No puedes agregar esta materia! Hay conflicto de horario o módulo con otra materia en tu carrito."
+        );
+        return;
+      }
+      setCart([
+        ...cart,
+        {
+          codigo: mat.codigo,
+          codigo_horario: horario.codigo_horario,
+          siglas: mat.siglas,
+          nombre: mat.nombre,
+          horario,
+          modulo_inicio: moduloInicio,
+          modulo_fin: moduloFin,
+          horarioIdx,
+          gestion: horario.gestion,
+        },
+      ]);
+      toast.success("Materia añadida al carrito");
+    },
+    [cart]
+  );
+  const handleRemoveFromCart = useCallback((idx) => {
+    setCart(prevCart => prevCart.filter((_, i) => i !== idx));
+  }, []);
+
+  const isInCart = useCallback(
+    (siglas, horarioIdx) => {
+      return cart.some(
+        (item) => item.siglas === siglas && item.horarioIdx === horarioIdx
       );
-      return;
-    }
-    setCart([
-      ...cart,
-      {
-        codigo: mat.codigo,
-        codigo_horario: horario.codigo_horario,
-        siglas: mat.siglas,
-        nombre: mat.nombre,
-        horario,
-        modulo_inicio: moduloInicio,
-        modulo_fin: moduloFin,
-        horarioIdx,
-        gestion: horario.gestion
-      },
-    ]);
-    toast.success("Materia añadida al carrito");
-  }
-  function handleRemoveFromCart(idx) {
-    setCart(cart.filter((_, i) => i !== idx));
-  }
-  function isInCart(siglas, horarioIdx) {
-    return cart.some(
-      (item) => item.siglas === siglas && item.horarioIdx === horarioIdx
-    );
-  }
+    },
+    [cart]
+  );
   const toggleAccordion = (semestre) =>
     setAccordion((a) => ({ ...a, [semestre]: !a[semestre] }));
   const todasAprobadas = (materiasSemestre) =>
     materiasSemestre.every((mat) => mat.estado === "aprobada");
+  const contarAprobadas = (materiasSemestre) => {
+    const total = materiasSemestre.length;
+    const aprobadas = materiasSemestre.filter(
+      (mat) => mat.estado === "aprobada"
+    ).length;
+    return { aprobadas, total };
+  };
 
- async function handleRegistrarMaterias() {
+  const handleRegistrarMaterias = useCallback(async () => {
     if (!estudiante?.Id_Persona) {
       toast.error("No se encontró el estudiante.");
       return;
@@ -152,7 +166,6 @@ export default function usePensumProgramacion() {
       toast.error("No hay materias en el carrito.");
       return;
     }
-
     const payload = {
       id_persona: estudiante.Id_Persona,
       gestion: cart[0]?.gestion,
@@ -161,18 +174,15 @@ export default function usePensumProgramacion() {
         codigo_horario: item.codigo_horario,
       })),
     };
-
     try {
       const res = await registrarInscripcionMateria(payload);
-
       if (res.ok) {
         toast.success("¡Materias registradas con éxito!");
         setCart([]);
       } else {
         toast.error(res.message || "Algunas materias no se registraron.");
-      
         if (res.rechazadas?.length) {
-          res.rechazadas.forEach(r =>
+          res.rechazadas.forEach((r) =>
             toast.error(` ${r.nombre}: ${r.motivo}`)
           );
         }
@@ -181,7 +191,7 @@ export default function usePensumProgramacion() {
       toast.error("Ocurrió un error al registrar las materias.");
       console.error(err);
     }
-  }
+  }, [estudiante, cart, registrarInscripcionMateria]);
 
   return {
     busqueda,
@@ -195,6 +205,7 @@ export default function usePensumProgramacion() {
     setAccordion,
     toggleAccordion,
     todasAprobadas,
+    contarAprobadas,
     cart,
     setCart,
     showCart,
@@ -210,6 +221,6 @@ export default function usePensumProgramacion() {
     pensum,
     handleRegistrarMaterias,
     loadingRegistrar,
-    MODULOS
+    MODULOS,
   };
 }

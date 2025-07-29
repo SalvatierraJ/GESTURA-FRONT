@@ -7,17 +7,20 @@ export default function SemesterTable({
   accordion,
   toggleAccordion,
   todasAprobadas,
+  contarAprobadas
 }) {
+  const {aprobadas, total} = contarAprobadas(materias);
   return (
     <div className="mb-2 border-b border-black">
       <button
         className={`w-full flex justify-between items-center py-2 px-4 ${
-          todasAprobadas(materias) ? "bg-green-500" : "bg-black"
+          todasAprobadas(materias) ? "bg-gray-600" : "bg-black"
         } text-white rounded-t hover:bg-red-800 transition font-semibold`}
         onClick={() => toggleAccordion(sem)}
         type="button"
       >
         <span>Semestre {sem}</span>
+        <span>{aprobadas}/{total} Materias</span>
         <span>{accordion[sem] ? "▲" : "▼"}</span>
       </button>
       {accordion[sem] && (

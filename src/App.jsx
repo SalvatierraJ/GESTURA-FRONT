@@ -23,6 +23,7 @@ import { useAuthStore } from "@/store/authStore";
 import { fetchProfile } from "@/services/auth";
 import { Toaster } from "react-hot-toast";
 
+
 function App() {
   const setAuth = useAuthStore((state) => state.setAuth);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -76,16 +77,7 @@ function App() {
 
   return (
     <>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: "#363636",
-            color: "#fff",
-          },
-        }}
-      />
+   
       <Routes>
         <Route element={<PublicRoute />}>
           <Route path="/" element={<Login />} />

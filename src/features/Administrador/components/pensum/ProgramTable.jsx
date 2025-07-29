@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { MultiSelect } from 'primereact/multiselect';
+import { MultiSelect } from "primereact/multiselect";
 
 export default function HorarioModuloTable({
   materiasProgramables,
@@ -11,7 +11,7 @@ export default function HorarioModuloTable({
   MODULOS,
 }) {
   const horarioOptions = HORARIOS_FIJOS.map((hor, idx) => ({
-    label: `${hor.label} (${hor.turno}${hor.extra ? ', ' + hor.extra : ''})`,
+    label: `${hor.label} (${hor.turno}${hor.extra ? ", " + hor.extra : ""})`,
     value: idx,
   }));
   const moduloOptions = MODULOS.map((m) => ({
@@ -19,9 +19,12 @@ export default function HorarioModuloTable({
     value: m,
   }));
 
-  const [horariosSeleccionados, setHorariosSeleccionados] = useState(horarioOptions.map(opt => opt.value));
-  const [modulosSeleccionados, setModulosSeleccionados] = useState(moduloOptions.map(opt => opt.value));
-
+  const [horariosSeleccionados, setHorariosSeleccionados] = useState(
+    horarioOptions.map((opt) => opt.value)
+  );
+  const [modulosSeleccionados, setModulosSeleccionados] = useState(
+    moduloOptions.map((opt) => opt.value)
+  );
 
   function toggleHorario(idx) {
     setHorariosSeleccionados((prev) =>
@@ -41,48 +44,86 @@ export default function HorarioModuloTable({
     modulosSeleccionados.includes(m)
   );
 
+  // Template para mostrar el valor seleccionado
+  const valueTemplate = (selectedValues, allOptions, type) => {
+    if (selectedValues.length === 0) {
+      return <span className="text-gray-500">Selecciona {type}</span>;
+    }
+    if (selectedValues.length === allOptions.length) {
+      return <span className="font-semibold text-green-700">Todos</span>;
+    }
+    return <span>{selectedValues.length} {type} seleccionados</span>;
+  };
+
   return (
-   <div>
+    <div>
       {/* MULTISELECT PrimeReact */}
       <div className="flex flex-wrap gap-4 mb-4 items-end">
         <div>
-          <label className="block font-semibold mb-1 text-sm text-black">Filtrar horarios:</label>
-          <MultiSelect
-            value={horariosSeleccionados}
-            options={horarioOptions}
-            onChange={(e) => setHorariosSeleccionados(e.value)}
-            display="chip"
-            placeholder="Selecciona horarios"
-            className="w-[250px] border-red-700"
-            style={{ background: 'white', borderColor: '#b91c1c', color: 'black' }}
-          />
+          <label className="block font-semibold mb-1 text-sm text-black">
+            Filtrar horarios:
+          </label>
+          <div className="relative">
+            <MultiSelect
+              value={horariosSeleccionados}
+              options={horarioOptions}
+              onChange={(e) => setHorariosSeleccionados(e.value)}
+              display="chip"
+              placeholder="Selecciona horarios"
+              className="w-[250px] border-red-700"
+              style={{
+                background: "white",
+                borderColor: "#b91c1c",
+                color: "black",
+              }}
+            />
+            {horariosSeleccionados.length === horarioOptions.length && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white border border-red-700 rounded pointer-events-none">
+                <span className="font-semibold text-green-700 text-sm">Todos</span>
+              </div>
+            )}
+          </div>
         </div>
         <div>
-          <label className="block font-semibold mb-1 text-sm text-black">Filtrar módulos:</label>
-          <MultiSelect
-            value={modulosSeleccionados}
-            options={moduloOptions}
-            onChange={(e) => setModulosSeleccionados(e.value)}
-            display="chip"
-            placeholder="Selecciona módulos"
-            className="w-[170px] border-red-700"
-            style={{ background: 'white', borderColor: '#b91c1c', color: 'black' }}
-          />
+          <label className="block font-semibold mb-1 text-sm text-black">
+            Filtrar módulos:
+          </label>
+          <div className="relative">
+            <MultiSelect
+              value={modulosSeleccionados}
+              options={moduloOptions}
+              onChange={(e) => setModulosSeleccionados(e.value)}
+              display="chip"
+              placeholder="Selecciona módulos"
+              className="w-[170px] border-red-700"
+              style={{
+                background: "white",
+                borderColor: "#b91c1c",
+                color: "black",
+              }}
+            />
+            {modulosSeleccionados.length === moduloOptions.length && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white border border-red-700 rounded pointer-events-none">
+                <span className="font-semibold text-green-700 text-sm">Todos</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* TABLA */}
-      <div className="overflow-x-auto bg-white border border-black rounded-lg shadow-lg">
+      
+      <div className="overflow-x-auto bg-white border border-black rounded-lg shadow-lg" style={{ maxHeight: "520px", overflowY: "auto" }}>
         <table className="min-w-[950px] w-full border-collapse">
           <thead>
-            <tr className="bg-black text-white">
-              <th className="sticky left-0 bg-black px-3 py-2 border-r-2 border-white text-left font-bold text-base min-w-[220px] z-20">
+            <tr className="bg-black text-white sticky top-0 z-30">
+              <th className="sticky left-0 bg-black px-3 py-2 border-r-2 border-white text-left font-bold text-base min-w-[220px] z-40">
                 Materia / Sigla
               </th>
               {horariosVisibles.map((hor, idx) => (
                 <th
                   key={idx}
-                  className="text-center px-2 py-1 border-r border-white font-semibold text-base"
+                  className="bg-black text-white text-center px-2 py-1 border-r border-white font-semibold text-base sticky top-0 z-30"
                 >
                   <div className="text-base font-bold">{hor.label}</div>
                   <div className="text-[10px] text-gray-200 uppercase">
@@ -95,16 +136,25 @@ export default function HorarioModuloTable({
               ))}
             </tr>
           </thead>
+
           <tbody>
             {materiasProgramables.map((mat, idx) => (
-              <tr key={idx} className="even:bg-gray-100 hover:bg-red-50 border-b-2 border-black last:border-b-0">
+              <tr
+                key={idx}
+                className="even:bg-gray-100 hover:bg-red-50 border-b-2 border-black last:border-b-0"
+              >
                 <td className="sticky left-0 bg-white border-r-2 border-black px-3 py-2 font-bold text-black text-sm min-w-[220px] z-10">
-                  <div className="block text-base">{mat.nombre}</div>
+                  <div className="block text-base break-words max-w-[170px] whitespace-pre-line">
+                    {mat.nombre}
+                  </div>
                   <div className="block text-xs text-gray-700">
                     {mat.siglas}, semestre: {mat.semestre}
                   </div>
                   <div className="block text-xs text-red-600">
                     {mat.horariosAbiertos?.[0]?.bimodular ? "Bimodular" : ""}
+                  </div>
+                  <div className="block text-xs text-red-600">
+                    {mat.equivalencias.map((e) => e).join(", ")}
                   </div>
                 </td>
                 {horariosVisibles.map((hor, colIdx) => {

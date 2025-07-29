@@ -32,8 +32,10 @@ export default function ModalRegistrarEstudiante({
   const { crearEstudiantes, editarEstudiante } = useEstudiantesStore();
 
   useEffect(() => {
-    if (!carreras?.length) cargarCarreras(1, 1000);
-  }, [carreras, cargarCarreras]);
+    if (visible && !carreras?.length) {
+      cargarCarreras(1, 1000);
+    }
+  }, [visible, carreras?.length]);
 
   useEffect(() => {
     if (estudianteEditar && visible) {

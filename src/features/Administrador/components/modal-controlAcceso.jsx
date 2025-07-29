@@ -44,10 +44,13 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
     }, 450);
     return () => clearTimeout(handler);
   }, [personQuery, visible, isEdit]);
+  
   useEffect(() => {
-    cargarRoles(1, 100);
-    cargarCarreras(1, 100);
-  }, [cargarRoles, cargarCarreras]);
+    if (visible) {
+      cargarRoles(1, 100);
+      cargarCarreras(1, 100);
+    }
+  }, [visible]);
 
   useImperativeHandle(ref, () => ({
     openForCreate: () => {
@@ -70,10 +73,6 @@ const ModalUsuario = forwardRef(({ onSubmit }, ref) => {
       setVisible(true);
     },
   }));
-
-  useEffect(() => {
-    cargarRoles(1, 100);
-  }, [cargarRoles]);
 
   const [form, setForm] = useState({
     correo: "",
