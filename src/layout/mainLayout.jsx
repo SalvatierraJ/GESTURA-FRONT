@@ -12,7 +12,13 @@ const MainLayout = () => {
   const [cartCount, setCartCount] = useState(0);
   const location = useLocation();
 
-  const showRightSidebar = location.pathname === "/home/registro-materia" && !!rightSidebar;
+  const rutasConSidebar = [
+  "/home/registro-materia",
+  "/home/pruebaConceptual",
+];
+
+const showRightSidebar = rutasConSidebar.includes(location.pathname) && !!rightSidebar;
+
 
   return (
     <div className="flex h-screen bg-gray-50">
