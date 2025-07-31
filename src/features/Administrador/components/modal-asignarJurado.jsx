@@ -13,18 +13,44 @@ export default function ModalAsignarJurados({
   disabled = false,
   onSuccess,
   className = "",
+  juradosBool, 
+  Jurados,
+  TituloModal
 }) {
   const [visible, setVisible] = useState(false);
   const [selectedJurados, setSelectedJurados] = useState([]);
   const [sorteo, setSorteo] = useState(false);
   const [saving, setSaving] = useState(false);
-  const { jurados, cargarJurados, asignarJurados } = useDefensasStore();
+  const { jurados, cargarJurados, asignarJurados, actualizarJurados } = useDefensasStore();
   const toast = useRef(null);
 
   useEffect(() => {
     if (visible) cargarJurados();
   }, [visible, cargarJurados]);
-
+useEffect(() => {
+  if (visible && Jurados) {
+    const juradosAsignados = [];
+    Object.values(Jurados).forEach(juradosDeDefensa => {
+      if (Array.isArray(juradosDeDefensa)) {
+        juradosAsignados.push(...juradosDeDefensa);
+      }
+      
+    });
+    const juradosUnicos = juradosAsignados.filter((jurado, index, self) => 
+      index === self.findIndex(j => (j.id || j.id_tribunal) === (jurado.id || jurado.id_tribunal))
+    );    
+    const juradosPreseleccionados = juradosUnicos.map(juradoAsignado => {
+      return jurados.find(juradoDisponible => 
+        (juradoDisponible.id || juradoDisponible.id_tribunal) === (juradoAsignado.id || juradoAsignado.id_tribunal) ||
+        juradoDisponible.nombre_completo === juradoAsignado.nombre ||
+        juradoDisponible.nombre === juradoAsignado.nombre
+      );
+    }).filter(Boolean); 
+    setSelectedJurados(juradosPreseleccionados);
+  } else if (visible && !Jurados) {
+    setSelectedJurados([]);
+  }
+}, [visible, Jurados, jurados]);
   const reset = () => {
     setVisible(false);
     setSelectedJurados([]);
@@ -40,13 +66,24 @@ export default function ModalAsignarJurados({
       ? []
       : selectedJurados.map(j => j.id || j.id_tribunal);
     try {
-      await asignarJurados({
-        defensasIds,
-        auto: sorteo,
-        juradoIds,
-      });
-      if (onSuccess) onSuccess();
+      if(!juradosBool) {
+        await asignarJurados({
+          defensasIds,
+          auto: sorteo,
+          juradoIds,
+        });
+      }
+      else { 
+        await actualizarJurados(defensasIds, juradoIds);
+      }
+      
       reset();
+      
+      // Ejecutar callback de éxito inmediatamente
+      if (onSuccess) {
+        onSuccess();
+      }
+      
     } catch (err) {
       let mensaje = "Ocurrió un error inesperado";
       if (err?.response?.data?.message) {
@@ -75,10 +112,10 @@ export default function ModalAsignarJurados({
       }}
     >
       <span className="text-xl font-bold text-white mx-auto">
-        Asignar Jurados
+      {TituloModal}
       </span>
       <button
-        className="text-white text-3xl font-bold opacity-80 hover:opacity-100 transition-all px-1 absolute right-5"
+        className="text-white text-3xl font-bold opacity-80 hover:opacity-100 transition-all px-1 Nosolute right-5"
         style={{ lineHeight: 1 }}
         aria-label="Cerrar"
         onClick={reset}
@@ -162,21 +199,24 @@ export default function ModalAsignarJurados({
             onSubmit={handleGuardar}
           >
             {/* Switch de sorteo */}
+             
             <div className="flex items-center gap-3">
+               {TituloModal != "Editar Jurados" && ( <>
               <InputSwitch
                 checked={sorteo}
                 onChange={(e) => setSorteo(e.value)}
                 className="accent-[#e11d1d]"
                 disabled={saving}
               />
+            
               <label className="font-semibold text-gray-800 text-base select-none">
                 Sorteo Automático de Jurados
-              </label>
+              </label> </>) } 
             </div>
             {sorteo && (
               <div className="text-xs text-[#e11d1d] ml-2">
                 El sistema sorteará automáticamente los jurados.
-              </div>
+              </div> 
             )}
 
             {/* MultiSelect de jurados */}

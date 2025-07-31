@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { fetchDefensas,asignarJuradosLote,fetchJurados, agregarNotaDefensa,  
-  agregarAulaDefensa  } from "@/services/defensas.services";
+  agregarAulaDefensa, actualizarJurados } from "@/services/defensas.services";
 export const useDefensasStore = create((set) => ({
   defensasInterna: [],
   defensasExternas:[],
@@ -81,6 +81,17 @@ export const useDefensasStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const result = await agregarAulaDefensa(id_defensa, aula);
+      set({ loading: false });
+      return result;
+    } catch (error) {
+      set({ error, loading: false });
+      throw error;
+    }
+  },
+  actualizarJurados: async (defensaId, juradoIds) => {
+    set({ loading: true, error: null });
+    try {
+      const result = await actualizarJurados(defensaId, juradoIds);
       set({ loading: false });
       return result;
     } catch (error) {

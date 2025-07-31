@@ -25,10 +25,18 @@ export async function agregarNotaDefensa(id_defensa, nota) {
     headers: { "Content-Type": "application/json" },
   });
 }
+export async function actualizarJurados(defensaId, juradoIds) {
+  return apiFetch("/defensasmanagament/actualizar-jurados", {
+    method: "POST",
+    body: JSON.stringify({ defensaId, juradoIds }),
+    headers: { "Content-Type": "application/json" },
+  });
+}
 export async function agregarAulaDefensa(id_defensa, aula) {
   return apiFetch(`/defensasmanagament/aula/${id_defensa}`, {
     method: "POST",
     body: JSON.stringify({ aula }),
     headers: { "Content-Type": "application/json" },
   });
+  
 }

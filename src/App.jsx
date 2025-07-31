@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Login from "@/layout/login";
 import Home from "@/layout/mainLayout";
 import Docente from "@/features/Administrador/pages/gestionDocentes";
@@ -11,6 +11,9 @@ import Ajustes from "@/features/Administrador/pages/perfil";
 import Acceso from "@/features/Administrador/pages/controlDeAcceso";
 import MisDefensas from "@/features/Estudiantes/pages/MisDefensas";
 import DefensaDetalles from "@/features/Estudiantes/pages/detallesDefensa";
+import RegistroMateria from "@/features/Administrador/pages/RegistroMateria";
+import Pensum from "@/features/Administrador/pages/pensum";
+
 import Prototipo from "@/features/Administrador/components/prototipo";
 import ProtectedRoute from "@/store/authGuardRoute";
 import PublicRoute from "@/store/publicRoute";
@@ -18,6 +21,8 @@ import "@/index.css";
 import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { fetchProfile } from "@/services/auth";
+import { Toaster } from "react-hot-toast";
+
 
 function App() {
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -71,38 +76,49 @@ function App() {
   }
 
   return (
-    <Routes>
-      <Route element={<PublicRoute />}>
-        <Route path="/" element={<Login />} />
-      </Route>
-      <Route element={<ProtectedRoute />}>
-        <Route path="/home" element={<Home />}>
-          <Route path="docentes" element={<Docente />} />
-          <Route path="casos" element={<CasosDeEstudio />} />
-          <Route path="estudiantes" element={<Estudiantes />} />
-          <Route path="defensas" element={<DefensaProgramada />} />
-          <Route path="plantillasGeneradas" element={<DocumentosGenerados />} />
-          <Route path="plantillas" element={<Plantillas />} />
-          <Route path="ajustes" element={<Ajustes />} />
-          <Route path="acceso" element={<Acceso />} />
-          <Route path="*" element={<h1>Page Not Found</h1>} />
+    <>
+   
+      <Routes>
+        <Route element={<PublicRoute />}>
+          <Route path="/" element={<Login />} />
         </Route>
-      </Route>
+        <Route element={<ProtectedRoute />}>
+          <Route path="/home" element={<Home />}>
+            <Route path="docentes" element={<Docente />} />
+            <Route path="casos" element={<CasosDeEstudio />} />
+            <Route path="estudiantes" element={<Estudiantes />} />
+            <Route path="defensas" element={<DefensaProgramada />} />
+            <Route
+              path="plantillasGeneradas"
+              element={<DocumentosGenerados />}
+            />
+            <Route path="plantillas" element={<Plantillas />} />
+            <Route path="ajustes" element={<Ajustes />} />
+            <Route path="acceso" element={<Acceso />} />
+            <Route path="registro-materia" element={<RegistroMateria />} />
+            <Route path="Pensum" element={<Pensum />} />
+            <Route path="*" element={<h1>Page Not Found</h1>} />
+          </Route>
+        </Route>
 
-      <Route element={<ProtectedRoute allowedRoles={["Estudiante"]} />}>
-        <Route path="/estudiante" element={<Home />}>
-          <Route path="misDefensas" element={<MisDefensas />} />
-          <Route
-            path="misDefensas/detallesDefensa"
-            element={<DefensaDetalles />}
-          />
-          <Route path="prototipo" element={<Prototipo />} />
-          <Route path="ajustes" element={<Ajustes />} />
-          <Route path="plantillasGeneradas" element={<DocumentosGenerados />} />
-          <Route path="*" element={<h1>Page Not Found</h1>} />
+        <Route element={<ProtectedRoute allowedRoles={["Estudiante"]} />}>
+          <Route path="/estudiante" element={<Home />}>
+            <Route path="misDefensas" element={<MisDefensas />} />
+            <Route
+              path="misDefensas/detallesDefensa"
+              element={<DefensaDetalles />}
+            />
+            <Route path="prototipo" element={<Prototipo />} />
+            <Route path="ajustes" element={<Ajustes />} />
+            <Route
+              path="plantillasGeneradas"
+              element={<DocumentosGenerados />}
+            />
+            <Route path="*" element={<h1>Page Not Found</h1>} />
+          </Route>
         </Route>
-      </Route>
-    </Routes>
+      </Routes>
+    </>
   );
 }
 

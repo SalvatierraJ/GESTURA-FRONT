@@ -29,8 +29,10 @@ export default function ModalRegistrarCarrera({
   } = useCasosStore();
 
   useEffect(() => {
-    cargarFacultades();
-  }, [cargarFacultades]);
+    if (visible) {
+      cargarFacultades();
+    }
+  }, [visible]);
 
   useEffect(() => {
     if (carrera) {

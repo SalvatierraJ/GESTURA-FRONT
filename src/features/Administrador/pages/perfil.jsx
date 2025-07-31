@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { Toast } from "primereact/toast";
+import { Dialog } from "primereact/dialog";
+import { obtenerQR, inicializarWhatsApp, obtenerEstado } from "../../../services/qr.services";
 
 // Formulario de perfil con loading y toast
 function ProfileForm() {
@@ -227,12 +229,61 @@ function ProfileForm() {
 // Componente de página de perfil
 function ProfilePage() {
   const user = useAuthStore((state) => state.user);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrData, setQrData] = useState(null);
+  const [loadingQR, setLoadingQR] = useState(false);
+  const [qrError, setQrError] = useState(null);
+  const [whatsappState, setWhatsappState] = useState(null);
+  
   const carreras = useMemo(() => {
     if (!user) return [];
     // Soporta múltiples roles con carreras
     return user.roles?.flatMap((r) => r.carreras) || [];
   }, [user]);
 
+  const handleGenerateQR = async () => {
+    setShowQRModal(true);
+    setLoadingQR(true);
+    setQrError(null);
+    
+    try {
+      // Paso 1: Verificar estado actual
+      const estadoActual = await obtenerEstado();
+      setWhatsappState(estadoActual.state);
+      console.log('Estado actual de WhatsApp:', estadoActual);
+      
+      // Paso 2: Inicializar si es necesario
+      if (estadoActual.state === 'disconnected' || estadoActual.state === 'error') {
+        console.log('Inicializando WhatsApp...');
+        await inicializarWhatsApp();
+        
+        // Esperar un poco para que se inicialice
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      
+      // Paso 3: Obtener el QR
+      const qrResponse = await obtenerQR();
+      
+      if (qrResponse.success) {
+        setQrData(qrResponse);
+        console.log('QR obtenido exitosamente');
+      } else {
+        setQrError(qrResponse.message || 'No se pudo generar el código QR');
+        console.log('Error al obtener QR:', qrResponse.message);
+      }
+    } catch (error) {
+      console.error('Error al generar QR:', error);
+      setQrError('Error al conectar con el servidor. Inténtalo de nuevo.');
+    } finally {
+      setLoadingQR(false);
+    }
+  };
+
+  const handleCloseQRModal = () => {
+    setShowQRModal(false);
+    setQrData(null);
+    setQrError(null);
+  };
   return (
     <div className="w-full min-h-screen px-8 pt-8">
       <div className="max-w-6xl mx-auto">
@@ -286,7 +337,90 @@ function ProfilePage() {
             </div>
           </div>
         )}
-        {/*Fin carreras asignadas */}
+  {user.Nombre_Usuario === "admin" && (
+        <div className="mt-10">
+          <div className="text-lg font-bold text-gray-900 mb-4">
+            Código QR Mensajes Whatsapp
+          </div>
+          <button
+            onClick={handleGenerateQR}
+            className="bg-red-700 hover:bg-red-800 text-white px-6 py-2 rounded-full text-base font-semibold flex items-center gap-2 transition-colors"
+          >
+            <i className="pi pi-qrcode" />
+            Generar QR
+          </button>
+        </div>
+      )}
+
+      <Dialog
+        header="Código QR - Mensajes WhatsApp"
+        visible={showQRModal}
+        style={{ width: '450px' }}
+        modal
+        onHide={handleCloseQRModal}
+        draggable={false}
+        resizable={false}
+        className="p-fluid"
+      >
+        <div className="flex flex-col items-center space-y-4 py-4">
+          <div className="text-center mb-4">
+            <p className="text-gray-600 text-sm">
+              Escanea este código QR con WhatsApp para conectar tu cuenta
+            </p>
+            {whatsappState && (
+              <p className="text-xs text-blue-600 mt-2">
+                Estado: {whatsappState === 'qr_pending' ? 'Esperando escaneo QR' : 
+                        whatsappState === 'ready' ? 'Conectado y listo' :
+                        whatsappState === 'connecting' ? 'Conectando...' :
+                        whatsappState === 'disconnected' ? 'Desconectado' : whatsappState}
+              </p>
+            )}
+          </div>
+          
+          <div className="w-64 h-64 border border-gray-200 rounded-lg overflow-hidden bg-white p-4 shadow-sm flex items-center justify-center">
+            {loadingQR ? (
+              <div className="text-center">
+                <i className="pi pi-spin pi-spinner text-3xl text-gray-400 mb-2"></i>
+                <p className="text-gray-500 text-sm">Generando código QR...</p>
+              </div>
+            ) : qrError ? (
+              <div className="text-center">
+                <i className="pi pi-exclamation-triangle text-3xl text-red-400 mb-2"></i>
+                <p className="text-red-500 text-sm">{qrError}</p>
+              </div>
+            ) : qrData?.qrImage ? (
+              <img
+                src={qrData.qrImage}
+                alt="Código QR WhatsApp"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <div className="text-center">
+                <i className="pi pi-qrcode text-3xl text-gray-400 mb-2"></i>
+                <p className="text-gray-500 text-sm">QR no disponible</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={handleGenerateQR}
+              disabled={loadingQR}
+              className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors"
+            >
+              <i className={`pi ${loadingQR ? 'pi-spin pi-spinner' : 'pi-refresh'}`} />
+              {loadingQR ? 'Generando...' : 'Regenerar QR'}
+            </button>
+            <button
+              onClick={handleCloseQRModal}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </Dialog>
+
       </div>
     </div>
   );

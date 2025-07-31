@@ -12,7 +12,7 @@ const Usuarios = ({ user, abrirModalEditar }) => (
   <tr className="border-b last:border-none hover:bg-gray-50">
     <td className="px-4 py-3 text-sm text-gray-700">{user.id}</td>
     <td className="px-4 py-3 text-sm text-gray-700">
-      {user.nombres ? user.nombre : "Sin nombre"}
+      {user.nombres ? user.nombres : "Sin nombre"}
     </td>
     <td className="px-4 py-3 text-sm text-gray-700">
       {user.correo ? user.correo : "sin correo"}
@@ -21,6 +21,11 @@ const Usuarios = ({ user, abrirModalEditar }) => (
       {user.roles && user.roles.length > 0
         ? user.roles.map((r) => r.nombre).join(", ")
         : "Sin roles"}
+    </td>
+       <td className="px-4 py-3 text-sm text-gray-700">
+      {user.carreras && user.carreras.length > 0
+        ? user.carreras.map((c) => c.nombre).join(", ")
+        : "Sin carreras"}
     </td>
 
     <td className="px-4 py-3 text-center space-x-2">
@@ -46,11 +51,7 @@ const Roles = ({ rol, setEditingRole, setModalVisible }) => (
             .join(", ")
         : "Sin permisos"}
     </td>
-    <td className="px-4 py-3 text-sm text-gray-700">
-      {rol.carreras && rol.carreras.length > 0
-        ? rol.carreras.map((c) => c.nombre).join(", ")
-        : "Sin carreras"}
-    </td>
+   
     <td className="px-4 py-3 text-center space-x-2">
       <button
         className="text-blue-600 hover:text-blue-800"
@@ -181,6 +182,9 @@ const MainContent = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Roles
                 </th>
+                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Carreras Administradas
+                </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
@@ -229,9 +233,7 @@ const MainContent = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Permisos
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Carreras Administradas
-                </th>
+             
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
                 </th>
