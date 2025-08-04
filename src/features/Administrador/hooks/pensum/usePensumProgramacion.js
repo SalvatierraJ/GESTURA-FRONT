@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { usePensumStore } from "@/store/materia.store";
 
@@ -8,7 +8,17 @@ export default function usePensumProgramacion() {
   const [cart, setCart] = useState([]);
   const [showCart, setShowCart] = useState(true);
   const { pensum, fetchPensum, clearPensum } = usePensumStore();
-  const { registrarInscripcionMateria, loadingRegistrar } = usePensumStore();
+  const {
+    registrarInscripcionMateria,
+    loadingRegistrar,
+    carrerasConPensum,
+    fetchCarrerasConPensum,
+    fetchPensumCarrera,
+    ajustesPensum,
+    updatePrerequisitos,
+    updateEquivalencias,
+  } = usePensumStore();
+  const [loadingBusqueda, setLoadingBusqueda] = useState(false);
 
   const HORARIOS_FIJOS = [
     { label: "07:15-10:00", turno: "MAÑANA", extra: "" },
@@ -60,11 +70,22 @@ export default function usePensumProgramacion() {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!busqueda.trim()) return;
-    await fetchPensum(busqueda.trim());
+    setLoadingBusqueda(true);
+    try {
+      await fetchPensum(busqueda.trim());
+    } finally {
+      setLoadingBusqueda(false);
+    }
   };
+
   useEffect(() => {
     if (!busqueda) clearPensum();
   }, [busqueda, clearPensum]);
+
+  useEffect(() => {
+    setCart([]);
+  }, [estudiante?.Id_Persona]);
+
   function horasSolapan(a1, a2, b1, b2) {
     return a1 < b2 && b1 < a2;
   }
@@ -134,7 +155,7 @@ export default function usePensumProgramacion() {
     [cart]
   );
   const handleRemoveFromCart = useCallback((idx) => {
-    setCart(prevCart => prevCart.filter((_, i) => i !== idx));
+    setCart((prevCart) => prevCart.filter((_, i) => i !== idx));
   }, []);
 
   const isInCart = useCallback(
@@ -193,6 +214,123 @@ export default function usePensumProgramacion() {
     }
   }, [estudiante, cart, registrarInscripcionMateria]);
 
+  //-------------------------
+  // ---------------- NUEVOS ESTADOS ----------------
+  const [modal, setModal] = useState({
+    open: false,
+    modo: "prereq",
+    materia: null,
+    initialValues: [],
+  });
+
+  const [selected, setSelected] = useState(null);
+
+  const ajusteMateria = ajustesPensum.materias ?? [];
+  const materiasPorSemestreAjuste = {};
+  ajusteMateria.forEach((mat) => {
+    const sem = parseInt(mat.semestre, 10);
+    if (!materiasPorSemestreAjuste[sem]) materiasPorSemestreAjuste[sem] = [];
+    materiasPorSemestreAjuste[sem].push(mat);
+  });
+
+  const semImparesAjuste = Object.keys(materiasPorSemestreAjuste).filter(
+    (s) => Number(s) % 2 !== 0
+  );
+  const semParesAjuste = Object.keys(materiasPorSemestreAjuste).filter(
+    (s) => Number(s) % 2 === 0
+  );
+
+  const handleEditPrereq = (mat) => {
+    setModal({
+      open: true,
+      modo: "prereq",
+      materia: mat,
+      initialValues: mat.prerrequisitos || [],
+    });
+  };
+
+  const handleEditEquiv = (mat) => {
+    setModal({
+      open: true,
+      modo: "equiv",
+      materia: mat,
+      initialValues: mat.equivalencias || [],
+    });
+  };
+
+  const handleSave = async (values) => {
+    if (modal.modo === "prereq") {
+      await updatePrerequisitos(modal.materia.id, values);
+      await fetchPensumCarrera([selected]);
+    } else {
+      await updateEquivalencias(modal.materia.id, values);
+      await fetchPensumCarrera([selected]);
+    }
+    setModal((prev) => ({ ...prev, open: false }));
+  };
+
+  useEffect(() => {
+    fetchCarrerasConPensum();
+  }, [fetchCarrerasConPensum]);
+
+  const options = carrerasConPensum.flatMap((carrera) =>
+    carrera.pensums.map((num) => ({
+      label: `${carrera.nombre_carrera} (Pensum ${num})`,
+      value: { nombreCarrera: carrera.nombre_carrera, numeroPensum: num },
+    }))
+  );
+
+  const handleBuscar = async () => {
+    if (selected) {
+      await fetchPensumCarrera([selected]);
+    }
+  };
+
+  function hashMateriasPorSemestre(data) {
+    return JSON.stringify(
+      Object.entries(data).map(([sem, materias]) => [
+        sem,
+        materias.map((m) => `${m.siglas}-${m.estado}`).sort(),
+      ])
+    );
+  }
+  const materiasHash = useMemo(
+    () => hashMateriasPorSemestre(materiasPorSemestre),
+    [materiasPorSemestre]
+  );
+
+  const sugerencias = useMemo(() => {
+    if (Object.keys(materiasPorSemestre).length === 0) {
+      return [
+        { icon: "fas fa-search", title: "Buscar estudiante", count: 0 },
+        {
+          icon: "fas fa-lightbulb",
+          title: "Sugerencias disponibles",
+          count: 0,
+        },
+      ];
+    }
+
+    return Object.entries(materiasPorSemestre)
+      .filter(([_, materiasSemestre]) => {
+        const pendientes = materiasSemestre.filter(
+          (mat) =>
+            mat.estado !== "aprobada" &&
+            !cart.some((c) => c.siglas === mat.siglas)
+        );
+        return pendientes.length === 1 || pendientes.length === 2;
+      })
+      .map(([sem]) => ({
+        icon: "fas fa-lightbulb",
+        title: `Sugerencia para semestre ${sem}`,
+        count: materiasPorSemestre[sem].filter(
+          (mat) =>
+            mat.estado !== "aprobada" &&
+            !cart.some((c) => c.siglas === mat.siglas)
+        ).length,
+      }));
+  }, [materiasPorSemestre, cart]);
+
   return {
     busqueda,
     setBusqueda,
@@ -222,5 +360,22 @@ export default function usePensumProgramacion() {
     handleRegistrarMaterias,
     loadingRegistrar,
     MODULOS,
+
+    modal,
+    setModal,
+    handleEditPrereq,
+    handleEditEquiv,
+    handleSave,
+    selected,
+    setSelected,
+    handleBuscar,
+    options,
+    sugerencias,
+    materiasHash,
+    ajusteMateria,
+    materiasPorSemestreAjuste,
+    semImparesAjuste,
+    semParesAjuste,
+    loadingBusqueda
   };
 }

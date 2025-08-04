@@ -7,9 +7,14 @@ export default function SemesterTable({
   accordion,
   toggleAccordion,
   todasAprobadas,
-  contarAprobadas
+  contarAprobadas,
+  editable = false,
+  onEditPrereq, 
+  onDeletePrereq, 
+  onEditEquiv, 
+  onDeleteEquiv, 
 }) {
-  const {aprobadas, total} = contarAprobadas(materias);
+  const { aprobadas, total } = contarAprobadas(materias);
   return (
     <div className="mb-2 border-b border-black">
       <button
@@ -20,7 +25,9 @@ export default function SemesterTable({
         type="button"
       >
         <span>Semestre {sem}</span>
-        <span>{aprobadas}/{total} Materias</span>
+        <span>
+          {aprobadas}/{total} Materias
+        </span>
         <span>{accordion[sem] ? "▲" : "▼"}</span>
       </button>
       {accordion[sem] && (
@@ -29,11 +36,19 @@ export default function SemesterTable({
             <thead>
               <tr className="bg-red-100">
                 <th className="text-black p-2 border-b border-black">Código</th>
-                <th className="text-black p-2 border-b border-black">Materia</th>
+                <th className="text-black p-2 border-b border-black">
+                  Materia
+                </th>
                 <th className="text-black p-2 border-b border-black">Estado</th>
-                <th className="text-black p-2 border-b border-black">Prerrequisitos</th>
-                <th className="text-black p-2 border-b border-black">Equivalencias</th>
-                <th className="text-black p-2 border-b border-black">Veces cursada</th>
+                <th className="text-black p-2 border-b border-black">
+                  Prerrequisitos
+                </th>
+                <th className="text-black p-2 border-b border-black">
+                  Equivalencias
+                </th>
+                <th className="text-black p-2 border-b border-black">
+                  Veces cursada
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -48,28 +63,98 @@ export default function SemesterTable({
                       : "bg-white"
                   }
                 >
-                  <td className="p-2 border-b border-black text-black">{mat.siglas}</td>
-                  <td className="p-2 border-b border-black text-black">{mat.nombre}</td>
+                  <td className="p-2 border-b border-black text-black">
+                    {mat.siglas}
+                  </td>
+                  <td className="p-2 border-b border-black text-black">
+                    {mat.nombre}
+                  </td>
                   <td className="p-2 border-b border-black text-center font-bold">
-                    <EstadoChip estado={mat.estado} puedeCursar={mat.puedeCursar} />
+                    <EstadoChip
+                      estado={mat.estado}
+                      puedeCursar={mat.puedeCursar}
+                    />
                   </td>
                   <td className="p-2 border-b border-black text-black">
-                    {mat.prerrequisitos?.length > 0
-                      ? mat.prerrequisitos
-                          .map((pr) =>
-                            pr.nombre
-                              ? `${pr.nombre} (${pr.sigla ?? ""})`
-                              : pr.total_materia
-                              ? `Aprobar ${pr.total_materia} materias`
-                              : ""
-                          )
-                          .join(", ")
-                      : "-"}
+                    {mat.prerrequisitos?.length > 0 ? (
+                      mat.prerrequisitos.map((pr, prIndex) => (
+                        <span
+                          key={prIndex}
+                          className="inline-flex items-center mr-2"
+                        >
+                          {pr.nombre
+                            ? `${pr.nombre} (${pr.sigla ?? ""})`
+                            : pr.total_materia
+                            ? `Aprobar ${pr.total_materia} materias`
+                            : ""}
+                          {editable && (
+                            <>
+                              <button
+                                className="ml-1 px-1 rounded text-blue-600 hover:bg-blue-100"
+                                title="Editar prerrequisito"
+                                onClick={() =>
+                                  onEditPrereq && onEditPrereq(mat, prIndex)
+                                }
+                              >
+                                ✎
+                              </button>
+                            </>
+                          )}
+                        </span>
+                      ))
+                    ) : editable ? (
+                      <button
+                        className="px-2 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200 transition"
+                        onClick={() => onEditPrereq && onEditPrereq(mat, null)}
+                        title="Agregar prerrequisito"
+                      >
+                        + Agregar
+                      </button>
+                    ) : (
+                      "-"
+                    )}
                   </td>
                   <td className="p-2 border-b border-black text-black">
-                    {mat.equivalencias?.length > 0 ? mat.equivalencias.join(", ") : "-"}
+                    {mat.equivalencias?.length > 0 ? (
+                      mat.equivalencias.map((eq, eqIndex) => (
+                        <span
+                          key={eq.id || eqIndex || eq}
+                          className="inline-flex items-center mr-2"
+                        >
+                          {/* Si es objeto muestra nombre/sigla, si es string solo el string */}
+                          {typeof eq === "object" && eq !== null
+                            ? `${eq.nombre}${eq.sigla ? ` (${eq.sigla})` : ""}`
+                            : eq}
+                          {editable && (
+                            <>
+                              <button
+                                className="ml-1 px-1 rounded text-blue-600 hover:bg-blue-100"
+                                title="Editar equivalencia"
+                                onClick={() =>
+                                  onEditEquiv && onEditEquiv(mat, eqIndex)
+                                }
+                              >
+                                ✎
+                              </button>
+                            </>
+                          )}
+                        </span>
+                      ))
+                    ) : editable ? (
+                      <button
+                        className="px-2 py-1 bg-green-100 text-green-800 rounded hover:bg-green-200 transition"
+                        onClick={() => onEditEquiv && onEditEquiv(mat, null)}
+                        title="Agregar equivalencia"
+                      >
+                        + Agregar
+                      </button>
+                    ) : (
+                      "-"
+                    )}
                   </td>
-                  <td className="p-2 border-b border-black text-black">{mat.vecesCursada}</td>
+                  <td className="p-2 border-b border-black text-black">
+                    {mat.vecesCursada}
+                  </td>
                 </tr>
               ))}
             </tbody>

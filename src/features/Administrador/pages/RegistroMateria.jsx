@@ -2,42 +2,44 @@ import { Toaster } from "react-hot-toast";
 import ManagementLayout from "@/components/administradorContenido";
 import CartSidebar from "@/features/Administrador/components/pensum/CartSidebar";
 import SemesterTable from "@/features/Administrador/components/pensum/SemesterTable";
-import EstadoChip from "@/features/Administrador/components/pensum/EstadoChip";
 import ProgramTable from "@/features/Administrador/components/pensum/ProgramTable";
 import SemesterSuggestion from "@/features/Administrador/components/pensum/SemesterSuggestion";
 import usePensumProgramacion from "@/features/Administrador/hooks/pensum/usePensumProgramacion";
 import EstudiantesMateriasView from "@/features/Administrador/components/incripciones/estudianteMateria";
-import RightSidebar from "@/features/Administrador/components/pensum/RightSidebar";
-import { useEffect, useMemo, useState, memo, useRef } from "react";
+import { useEffect, useState, memo, useRef } from "react";
 import { useOutletContext } from "react-router-dom";
-
-// Componente separado para el sidebar para evitar recreaciones
-const SidebarContent = memo(({ 
-  materiasPorSemestre, 
-  cart, 
-  totalMat, 
-  handleRemoveFromCart, 
-  limiteAlcanzado, 
-  handleRegistrarMaterias, 
-  loadingRegistrar 
-}) => (
-  <div className="bg-white border border-red-300 shadow-xl rounded-2xl p-4">
-    <p className="mb-3 text-gray-700">
-      <SemesterSuggestion
-        materiasPorSemestre={materiasPorSemestre}
+import { usePensumStore } from "../../../store/materia.store";
+import { Dropdown } from "primereact/dropdown";
+import ModalEditPrereqEquiv from "../components/pensum/modalPreReq";
+import { Button } from "primereact/button";
+const SidebarContent = memo(
+  ({
+    materiasPorSemestre,
+    cart,
+    totalMat,
+    handleRemoveFromCart,
+    limiteAlcanzado,
+    handleRegistrarMaterias,
+    loadingRegistrar,
+  }) => (
+    <div className="bg-white border border-red-300 shadow-xl rounded-2xl p-4">
+      <p className="mb-3 text-gray-700">
+        <SemesterSuggestion
+          materiasPorSemestre={materiasPorSemestre}
+          cart={cart}
+        />
+      </p>
+      <CartSidebar
         cart={cart}
+        totalMat={totalMat}
+        handleRemoveFromCart={handleRemoveFromCart}
+        limiteAlcanzado={limiteAlcanzado}
+        handleRegistrarMaterias={handleRegistrarMaterias}
+        loadingRegistrar={loadingRegistrar}
       />
-    </p>
-    <CartSidebar
-      cart={cart}
-      totalMat={totalMat}
-      handleRemoveFromCart={handleRemoveFromCart}
-      limiteAlcanzado={limiteAlcanzado}
-      handleRegistrarMaterias={handleRegistrarMaterias}
-      loadingRegistrar={loadingRegistrar}
-    />
-  </div>
-));
+    </div>
+  )
+);
 
 export default function PensumEstudiante() {
   const {
@@ -68,65 +70,49 @@ export default function PensumEstudiante() {
     handleRegistrarMaterias,
     loadingRegistrar,
     MODULOS,
+
+    modal,
+    setModal,
+    handleEditPrereq,
+    handleEditEquiv,
+    handleSave,
+    selected,
+    setSelected,
+    handleBuscar,
+    options,
+    sugerencias,
+    materiasHash,
+    ajusteMateria,
+    materiasPorSemestreAjuste,
+    semImparesAjuste,
+    semParesAjuste,
+    loadingBusqueda
   } = usePensumProgramacion();
   const { setRightSidebar, setSuggestions, setCartCount } = useOutletContext();
+  const {
+    loadingPensum,
 
-  const sugerencias = useMemo(() => {
-    // Si no hay materias cargadas, mostrar sugerencias por defecto
-    if (Object.keys(materiasPorSemestre).length === 0) {
-      return [
-        {
-          icon: "fas fa-search",
-          title: "Buscar estudiante",
-          count: 0,
-        },
-        {
-          icon: "fas fa-lightbulb",
-          title: "Sugerencias disponibles",
-          count: 0,
-        }
-      ];
-    }
-    
-    return Object.entries(materiasPorSemestre)
-      .filter(([_, materiasSemestre]) => {
-        const pendientes = materiasSemestre.filter(
-          (mat) =>
-            mat.estado !== "aprobada" &&
-            !cart.some((c) => c.siglas === mat.siglas)
-        );
-        return pendientes.length === 1 || pendientes.length === 2;
-      })
-      .map(([sem]) => ({
-        icon: "fas fa-lightbulb",
-        title: `Sugerencia para semestre ${sem}`,
-        count: materiasPorSemestre[sem].filter(
-          (mat) =>
-            mat.estado !== "aprobada" &&
-            !cart.some((c) => c.siglas === mat.siglas)
-        ).length,
-      }));
-  }, [materiasPorSemestre, cart]);
+    materiasIdNombrePensum,
+  } = usePensumStore();
 
   const [activeTab, setActiveTab] = useState("Pensum");
-  
-  // Usar useRef para rastrear el estado anterior y evitar actualizaciones innecesarias
+
   const prevStateRef = useRef(null);
-  
-  // Efecto unificado que maneja tanto el render inicial como las actualizaciones
   useEffect(() => {
     const currentState = {
       cartLength: cart.length,
       totalMat,
       loadingRegistrar,
       sugerenciasLength: sugerencias.length,
-      hasMaterias: Object.keys(materiasPorSemestre).length > 0,
+      materiasHash,
     };
-    
-    // Ejecutar en el primer render o cuando el estado cambie
-    if (prevStateRef.current === null || JSON.stringify(prevStateRef.current) !== JSON.stringify(currentState)) {
+
+    if (
+      prevStateRef.current === null ||
+      JSON.stringify(prevStateRef.current) !== JSON.stringify(currentState)
+    ) {
       prevStateRef.current = currentState;
-      
+
       const content = (
         <SidebarContent
           materiasPorSemestre={materiasPorSemestre}
@@ -138,19 +124,25 @@ export default function PensumEstudiante() {
           loadingRegistrar={loadingRegistrar}
         />
       );
-      
+
       setRightSidebar(content);
       setSuggestions(sugerencias);
       setCartCount(cart.length);
     }
-    
+
     return () => {
       setRightSidebar(null);
       setSuggestions(null);
       setCartCount(0);
     };
-  }, [cart.length, totalMat, loadingRegistrar, sugerencias.length, Object.keys(materiasPorSemestre).length]);
-  
+  }, [
+    cart.length,
+    totalMat,
+    loadingRegistrar,
+    sugerencias.length,
+    materiasHash,
+  ]);
+
   const tabs = [
     {
       key: "Pensum",
@@ -159,6 +151,10 @@ export default function PensumEstudiante() {
     {
       key: "estudiantes",
       label: "Estudiantes Programados",
+    },
+    {
+      key: "ajustes",
+      label: "Ajuste de Pensum",
     },
   ];
 
@@ -172,7 +168,7 @@ export default function PensumEstudiante() {
       {activeTab === "Pensum" && (
         <div className="bg-white rounded-2xl shadow max-w-7xl mx-auto relative p-6">
           <Toaster />
-          
+
           <div className="flex flex-col items-center">
             <h2 className="text-2xl font-bold mb-4 text-black text-center">
               Consulta de Pensum
@@ -186,7 +182,12 @@ export default function PensumEstudiante() {
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </form>
-            {!materias.length ? (
+            {loadingBusqueda ? (
+              <div className="flex justify-center items-center my-8">
+                <i className="pi pi-spin pi-spinner text-4xl text-red-700" />
+                <span className="ml-4 text-black">Buscando estudiante...</span>
+              </div>
+            ) : !materias.length ? (
               <div className="text-center text-black">
                 Ingrese el número de registro del estudiante y presione Enter.
               </div>
@@ -258,6 +259,93 @@ export default function PensumEstudiante() {
         </div>
       )}
       {activeTab === "estudiantes" && <EstudiantesMateriasView />}
+      {activeTab === "ajustes" && (
+        <>
+          <div>
+            <h2 className="text-2xl font-bold mb-4 text-black text-center">
+              Consulta de Pensum
+            </h2>
+            <div className="flex gap-2 items-center">
+              <Dropdown
+                value={selected}
+                options={options}
+                onChange={(e) => setSelected(e.value)}
+                placeholder="Seleccione carrera y pensum"
+                className="w-80"
+                filter
+              />
+              <Button
+                label="Buscar"
+                icon="pi pi-search"
+                onClick={handleBuscar}
+                disabled={!selected || loadingPensum}
+              />
+            </div>
+
+            {/* LOADING */}
+            {loadingPensum && (
+              <div className="flex justify-center items-center my-8">
+                <i className="pi pi-spin pi-spinner text-4xl text-red-700" />
+                <span className="ml-4 text-black">Cargando pensum...</span>
+              </div>
+            )}
+
+            {/* PENSUM AJUSTADO */}
+            {ajusteMateria.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 w-full max-w-6xl mx-auto mt-6">
+                <div>
+                  {semImparesAjuste.map((sem) => (
+                    <SemesterTable
+                      key={sem}
+                      sem={sem}
+                      materias={materiasPorSemestreAjuste[sem]}
+                      accordion={accordion}
+                      toggleAccordion={toggleAccordion}
+                      todasAprobadas={todasAprobadas}
+                      contarAprobadas={contarAprobadas}
+                      editable={true}
+                      onEditPrereq={handleEditPrereq}
+                      onEditEquiv={handleEditEquiv}
+                    />
+                  ))}
+                </div>
+                <div>
+                  {semParesAjuste.map((sem) => (
+                    <SemesterTable
+                      key={sem}
+                      sem={sem}
+                      materias={materiasPorSemestreAjuste[sem]}
+                      accordion={accordion}
+                      toggleAccordion={toggleAccordion}
+                      todasAprobadas={todasAprobadas}
+                      contarAprobadas={contarAprobadas}
+                      editable={true}
+                      onEditPrereq={handleEditPrereq}
+                      onEditEquiv={handleEditEquiv}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* MENSAJE SI NO SE HA BUSCADO AÚN O NO HAY RESULTADOS */}
+            {!loadingPensum && ajusteMateria.length === 0 && (
+              <div className="text-center text-black mt-6">
+                Selecciona una carrera y un pensum, luego haz clic en "Buscar".
+              </div>
+            )}
+          </div>
+          <ModalEditPrereqEquiv
+            visible={modal.open}
+            onHide={() => setModal((prev) => ({ ...prev, open: false }))}
+            modo={modal.modo}
+            materiaActual={modal.materia || { id: null }}
+            materiasIdNombrePensum={materiasIdNombrePensum}
+            initialValues={modal.initialValues}
+            onSave={handleSave}
+          />
+        </>
+      )}
     </ManagementLayout>
   );
 }

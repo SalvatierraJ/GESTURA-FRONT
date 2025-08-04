@@ -10,128 +10,104 @@ export default function HorarioModuloTable({
   HORARIOS_FIJOS,
   MODULOS,
 }) {
-  const horarioOptions = HORARIOS_FIJOS.map((hor, idx) => ({
-    label: `${hor.label} (${hor.turno}${hor.extra ? ", " + hor.extra : ""})`,
-    value: idx,
-  }));
   const moduloOptions = MODULOS.map((m) => ({
-    label: `Módulo ${m}`,
+    label: `Módulo M${m}`,
     value: m,
   }));
 
-  const [horariosSeleccionados, setHorariosSeleccionados] = useState(
-    horarioOptions.map((opt) => opt.value)
-  );
+  const horarioOptions = HORARIOS_FIJOS.map((h) => ({
+    label: `${h.label} (${h.turno}${h.extra ? ", " + h.extra : ""})`,
+    value: h.label, 
+  }));
+
   const [modulosSeleccionados, setModulosSeleccionados] = useState(
     moduloOptions.map((opt) => opt.value)
   );
-
-  function toggleHorario(idx) {
-    setHorariosSeleccionados((prev) =>
-      prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
-    );
-  }
-  function toggleModulo(mod) {
-    setModulosSeleccionados((prev) =>
-      prev.includes(mod) ? prev.filter((m) => m !== mod) : [...prev, mod]
-    );
-  }
-
-  const horariosVisibles = HORARIOS_FIJOS.filter((_, idx) =>
-    horariosSeleccionados.includes(idx)
+  const [horariosSeleccionados, setHorariosSeleccionados] = useState(
+    horarioOptions.map((opt) => opt.value)
   );
+
   const modulosVisibles = MODULOS.filter((m) =>
     modulosSeleccionados.includes(m)
   );
 
-  // Template para mostrar el valor seleccionado
-  const valueTemplate = (selectedValues, allOptions, type) => {
-    if (selectedValues.length === 0) {
-      return <span className="text-gray-500">Selecciona {type}</span>;
-    }
-    if (selectedValues.length === allOptions.length) {
-      return <span className="font-semibold text-green-700">Todos</span>;
-    }
-    return <span>{selectedValues.length} {type} seleccionados</span>;
-  };
-
   return (
     <div>
-      {/* MULTISELECT PrimeReact */}
+      {/* MULTISELECTS */}
       <div className="flex flex-wrap gap-4 mb-4 items-end">
-        <div>
-          <label className="block font-semibold mb-1 text-sm text-black">
-            Filtrar horarios:
-          </label>
-          <div className="relative">
-            <MultiSelect
-              value={horariosSeleccionados}
-              options={horarioOptions}
-              onChange={(e) => setHorariosSeleccionados(e.value)}
-              display="chip"
-              placeholder="Selecciona horarios"
-              className="w-[250px] border-red-700"
-              style={{
-                background: "white",
-                borderColor: "#b91c1c",
-                color: "black",
-              }}
-            />
-            {horariosSeleccionados.length === horarioOptions.length && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white border border-red-700 rounded pointer-events-none">
-                <span className="font-semibold text-green-700 text-sm">Todos</span>
-              </div>
-            )}
-          </div>
-        </div>
         <div>
           <label className="block font-semibold mb-1 text-sm text-black">
             Filtrar módulos:
           </label>
-          <div className="relative">
-            <MultiSelect
-              value={modulosSeleccionados}
-              options={moduloOptions}
-              onChange={(e) => setModulosSeleccionados(e.value)}
-              display="chip"
-              placeholder="Selecciona módulos"
-              className="w-[170px] border-red-700"
-              style={{
-                background: "white",
-                borderColor: "#b91c1c",
-                color: "black",
-              }}
-            />
-            {modulosSeleccionados.length === moduloOptions.length && (
-              <div className="absolute inset-0 flex items-center justify-center bg-white border border-red-700 rounded pointer-events-none">
-                <span className="font-semibold text-green-700 text-sm">Todos</span>
-              </div>
-            )}
-          </div>
+          <MultiSelect
+            value={modulosSeleccionados}
+            options={moduloOptions}
+            onChange={(e) => setModulosSeleccionados(e.value)}
+            display="chip"
+            placeholder="Selecciona módulos"
+            valueTemplate={(selected) =>
+              selected.length === moduloOptions.length ? (
+                <span className="font-semibold text-green-700">TODOS</span>
+              ) : selected.length === 0 ? (
+                <span className="text-gray-500">Ninguno</span>
+              ) : (
+                <span>{selected.length} seleccionados</span>
+              )
+            }
+            className="w-[200px] border-red-700"
+            style={{
+              background: "white",
+              borderColor: "#b91c1c",
+              color: "black",
+            }}
+          />
+        </div>
+        <div>
+          <label className="block font-semibold mb-1 text-sm text-black">
+            Filtrar horarios:
+          </label>
+          <MultiSelect
+            value={horariosSeleccionados}
+            options={horarioOptions}
+            onChange={(e) => setHorariosSeleccionados(e.value)}
+            display="chip"
+            placeholder="Selecciona horarios"
+            valueTemplate={(selected) =>
+              selected.length === horarioOptions.length ? (
+                <span className="font-semibold text-green-700">TODOS</span>
+              ) : selected.length === 0 ? (
+                <span className="text-gray-500">Ninguno</span>
+              ) : (
+                <span>{selected.length} seleccionados</span>
+              )
+            }
+            className="w-[280px] border-red-700"
+            style={{
+              background: "white",
+              borderColor: "#b91c1c",
+              color: "black",
+            }}
+          />
         </div>
       </div>
 
       {/* TABLA */}
-      
-      <div className="overflow-x-auto bg-white border border-black rounded-lg shadow-lg" style={{ maxHeight: "520px", overflowY: "auto" }}>
+      <div
+        className="overflow-x-auto bg-white border border-black rounded-lg shadow-lg"
+        style={{ maxHeight: "520px", overflowY: "auto" }}
+      >
         <table className="min-w-[950px] w-full border-collapse">
           <thead>
             <tr className="bg-black text-white sticky top-0 z-30">
               <th className="sticky left-0 bg-black px-3 py-2 border-r-2 border-white text-left font-bold text-base min-w-[220px] z-40">
                 Materia / Sigla
               </th>
-              {horariosVisibles.map((hor, idx) => (
+              {modulosVisibles.map((mod, idx) => (
                 <th
                   key={idx}
                   className="bg-black text-white text-center px-2 py-1 border-r border-white font-semibold text-base sticky top-0 z-30"
                 >
-                  <div className="text-base font-bold">{hor.label}</div>
-                  <div className="text-[10px] text-gray-200 uppercase">
-                    {hor.turno}
-                  </div>
-                  {hor.extra && (
-                    <div className="text-[9px] text-red-300">{hor.extra}</div>
-                  )}
+                  <div className="text-base font-bold">M{mod}</div>
                 </th>
               ))}
             </tr>
@@ -147,8 +123,9 @@ export default function HorarioModuloTable({
                   <div className="block text-base break-words max-w-[170px] whitespace-pre-line">
                     {mat.nombre}
                   </div>
+                  
                   <div className="block text-xs text-gray-700">
-                    {mat.siglas}, semestre: {mat.semestre}
+                    Codigo: {mat.codigo} , Siglas:{mat.siglas}, semestre: {mat.semestre}
                   </div>
                   <div className="block text-xs text-red-600">
                     {mat.horariosAbiertos?.[0]?.bimodular ? "Bimodular" : ""}
@@ -157,32 +134,31 @@ export default function HorarioModuloTable({
                     {mat.equivalencias.map((e) => e).join(", ")}
                   </div>
                 </td>
-                {horariosVisibles.map((hor, colIdx) => {
-                  const horariosEnColumna = (mat.horariosAbiertos || []).filter(
+                {modulosVisibles.map((mod, colIdx) => {
+                  const horariosFiltrados = (mat.horariosAbiertos || []).filter(
                     (h) =>
-                      h.horario === hor.label &&
-                      modulosSeleccionados.includes(h.modulo_inicio)
+                      h.modulo_inicio === mod &&
+                      horariosSeleccionados.includes(h.horario)
                   );
-                  if (!horariosEnColumna.length)
+
+                  if (!horariosFiltrados.length)
                     return (
                       <td
                         key={colIdx}
                         className="border border-black text-center min-w-[90px] px-2 py-2"
                       ></td>
                     );
+
                   return (
                     <td
                       key={colIdx}
                       className="border border-black min-w-[90px] px-2 py-2"
                     >
                       <div className="flex flex-col gap-1 items-center">
-                        {horariosEnColumna.map((h, hi) => {
+                        {horariosFiltrados.map((h, hi) => {
                           const isAlready = isInCart(
                             mat.siglas,
                             mat.horariosAbiertos.indexOf(h)
-                          );
-                          const materiaYaEnCarrito = cart.some(
-                            (item) => item.siglas === mat.siglas
                           );
                           const isInAnyGroupInCart = cart.some(
                             (item) => item.siglas === mat.siglas
@@ -190,27 +166,20 @@ export default function HorarioModuloTable({
                           return (
                             <button
                               key={hi}
-                              className={`
-                                w-full min-w-[75px] px-2 py-1 rounded font-bold shadow border-2 text-xs transition
+                              className={`w-full min-w-[75px] px-2 py-1 rounded font-bold shadow border-2 text-xs transition
                                 ${
                                   isAlready
                                     ? "bg-red-200 text-red-700 border-red-500 cursor-not-allowed"
                                     : isInAnyGroupInCart
                                     ? "bg-gray-200 text-gray-400 border-gray-400 cursor-not-allowed"
                                     : "bg-white text-black border-black hover:bg-red-700 hover:text-white"
-                                }
-                              `}
+                                }`}
                               disabled={
                                 isAlready ||
                                 isInAnyGroupInCart ||
                                 limiteAlcanzado
                               }
-                              title={`
-                                Grupo: ${h.grupo}
-                                ${h.modalidad ? " | " + h.modalidad : ""}
-                                ${h.horario ? " | " + h.horario : ""}
-                                Módulo: ${h.modulo_inicio ?? ""}
-                              `}
+                              title={`Grupo: ${h.grupo} | ${h.modalidad} | ${h.horario}`}
                               onClick={() =>
                                 !isInAnyGroupInCart &&
                                 handleAddToCart(
@@ -222,9 +191,9 @@ export default function HorarioModuloTable({
                               <span className="block text-base">
                                 Grupo: {h.grupo}
                               </span>
-                              {typeof h.modulo_inicio !== "undefined" && (
+                              {h.horario && (
                                 <span className="block text-[11px] text-red-600">
-                                  Módulo: {h.modulo_inicio}
+                                  {h.horario}
                                 </span>
                               )}
                               {h.modalidad && (

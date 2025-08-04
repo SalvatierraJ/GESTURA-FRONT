@@ -4,10 +4,17 @@ import {
   buscarEstudiantesMateriasPaginado,
   registrarInscripcionMateria,
   eliminarInscripcionMateria,
+  getPensumCarrera,
+  getCarrerasConPensum,
+  actualizarPrerrequisitosMateria,
+  actualizarEquivalenciasMateria,
 } from "@/services/materias.services";
 
 export const usePensumStore = create((set) => ({
   pensum: [],
+  ajustesPensum:[],
+  carrerasConPensum:[],
+  materiasIdNombrePensum:[],
   estudiantesMaterias: {
     items: [],
     total: 0,
@@ -19,6 +26,8 @@ export const usePensumStore = create((set) => ({
   loadingEstudiantes: false,
   loadingEliminar: false,
   loadingRegistrar: false,
+  loadingActualizarPrereq: false,
+  loadingActualizarEquiv: false,
 
   // Buscar pensum por nro de registro
   fetchPensum: async (nroRegistro) => {
@@ -91,7 +100,52 @@ export const usePensumStore = create((set) => ({
       throw error;
     }
   },
+  fetchCarrerasConPensum: async () => {
+    set({ loadingCarrerasConPensum: true });
+    try {
+      const data = await getCarrerasConPensum();
+      set({ carrerasConPensum: data, loadingCarrerasConPensum: false });
+    } catch (error) {
+      set({ carrerasConPensum: [], loadingCarrerasConPensum: false });
+      console.error("Error al cargar carreras con pensum", error);
+    }
+  },
+  fetchPensumCarrera: async (arrayCarreras) => {
+    set({ loadingPensum: true });
+    try {
+      const data = await getPensumCarrera(arrayCarreras);
+      set({ ajustesPensum: data, loadingPensum: false,materiasIdNombrePensum: data.materiasIdNombrePensum });
+    } catch (error) {
+      set({ ajustesPensum: [], loadingPensum: false, materiasIdNombrePensum:[] });
+      console.error("Error al cargar pensum de carrera", error);
+    }
+  },
+  updatePrerequisitos: async (idMateria, prerrequisitos) => {
+    set({ loadingActualizarPrereq: true });
+    try {
+      const res = await actualizarPrerrequisitosMateria(idMateria, prerrequisitos);
+      
+      set({ loadingActualizarPrereq: false });
+      return res;
+    } catch (error) {
+      set({ loadingActualizarPrereq: false });
+      throw error;
+    }
+  },
 
+  updateEquivalencias: async (idMateria, equivalencias) => {
+    set({ loadingActualizarEquiv: true });
+    try {
+      const res = await actualizarEquivalenciasMateria(idMateria, equivalencias);
+
+      set({ loadingActualizarEquiv: false });
+      return res;
+    } catch (error) {
+      set({ loadingActualizarEquiv: false });
+      throw error;
+    }
+  },
+  clearAjustesPensum:()=> set({ajustesPensum:[]}),
   clearPensum: () => set({ pensum: [] }),
   clearEstudiantesMaterias: () =>
     set({

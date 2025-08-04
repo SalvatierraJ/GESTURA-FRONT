@@ -13,6 +13,7 @@ import MisDefensas from "@/features/Estudiantes/pages/MisDefensas";
 import DefensaDetalles from "@/features/Estudiantes/pages/detallesDefensa";
 import RegistroMateria from "@/features/Administrador/pages/RegistroMateria";
 import Pensum from "@/features/Administrador/pages/pensum";
+import SimuladorAperturaMaterias from "./features/Administrador/pages/simulador";
 
 import Prototipo from "@/features/Administrador/components/prototipo";
 import ProtectedRoute from "@/store/authGuardRoute";
@@ -97,6 +98,9 @@ function App() {
             <Route path="acceso" element={<Acceso />} />
             <Route path="registro-materia" element={<RegistroMateria />} />
             <Route path="Pensum" element={<Pensum />} />
+            <Route
+              path="simulador-apertura-materias"
+              element={<SimuladorAperturaMaterias />} />
             <Route path="*" element={<h1>Page Not Found</h1>} />
           </Route>
         </Route>
