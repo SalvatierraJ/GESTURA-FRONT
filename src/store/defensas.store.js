@@ -11,10 +11,10 @@ export const useDefensasStore = create((set) => ({
   loading: false,
   error: null,
   tipoDefensa: "",
-  cargarDefensasInterna: async (page, pageSize, tipoDefensa) => {
+  cargarDefensasInterna: async (page, pageSize, tipoDefensa, word = '') => {
     set({ loading: true, error: null });
     try {
-      const data = await fetchDefensas(page, pageSize, tipoDefensa);
+      const data = await fetchDefensas(page, pageSize, tipoDefensa, word);
       set({
         defensasInterna: data.items || [],
         total: data.total || 0,
@@ -28,10 +28,10 @@ export const useDefensasStore = create((set) => ({
       set({ error, loading: false });
     }
   },
-  cargarDefensasExternas: async (page, pageSize, tipoDefensa) => {
+  cargarDefensasExternas: async (page, pageSize, tipoDefensa, word = '') => {
     set({ loading: true, error: null });
     try {
-      const data = await fetchDefensas(page, pageSize, tipoDefensa);
+      const data = await fetchDefensas(page, pageSize, tipoDefensa, word);
       set({
         defensasExternas: data.items || [],
         total: data.total || 0,

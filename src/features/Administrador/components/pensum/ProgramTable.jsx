@@ -125,7 +125,7 @@ export default function HorarioModuloTable({
                   </div>
                   
                   <div className="block text-xs text-gray-700">
-                    Codigo: {mat.codigo} , Siglas:{mat.siglas}, semestre: {mat.semestre}
+                    Codigo: {mat.codigo_materia} , Siglas:{mat.siglas}, semestre: {mat.semestre}
                   </div>
                   <div className="block text-xs text-red-600">
                     {mat.horariosAbiertos?.[0]?.bimodular ? "Bimodular" : ""}

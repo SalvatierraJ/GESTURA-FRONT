@@ -8,6 +8,7 @@ import { useEstudiantesStore } from "@/store/estudiantes.store";
 import InputBuscar from "@/components/searchInput";
 import { Paginator } from "primereact/paginator";
 import { Button } from "primereact/button";
+import debounce from "lodash.debounce";
 
 const normalizar = (str) =>
   (str || "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -214,6 +215,20 @@ const MainContent = () => {
     setPage(event.page + 1);
     setPageSize(event.rows);
   };
+
+  //Este es el debounce para la carga de estudiantes
+useEffect(() => {
+  const debounceCargarDatos = debounce(() => {
+    if (activeTab === "ExamendeGrado") {
+      cargarEstudiantes(1, pageSize, searchTerm); 
+    }
+  }, 500);
+  
+  debounceCargarDatos();
+  
+  return () => debounceCargarDatos.cancel();
+}, [searchTerm, activeTab, pageSize, cargarEstudiantes]);
+
 
   const [modalVisible, setModalVisible] = useState(false);
   const [estudianteAEditar, setEstudianteAEditar] = useState(null);

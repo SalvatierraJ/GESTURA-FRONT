@@ -11,6 +11,8 @@ import { Paginator } from "primereact/paginator";
 import { useAuthStore } from "@/store/authStore";
 import ModalDocumento from "@/features/Administrador/components/modal_Prev_PDF";
 import ModalEditarCasoEstudio from "@/features/Administrador/components/modal-editar-casoEstudio";
+import debounce from "lodash.debounce";
+
 const FilaCasos = ({
   caso,
   onPreview,
@@ -192,9 +194,7 @@ const MainContent = () => {
   } = useCasosStore();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const filteredCarreras = carreras.filter((c) =>
-    (c.nombre_carrera || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredCarreras = carreras;
 
   const filteredAreas = areas.filter((a) =>
     (a.nombre_area || "").toLowerCase().includes(searchTerm.toLowerCase())
@@ -218,6 +218,28 @@ const MainContent = () => {
     setPage(1);
     setPageSize(10);
   }, [activeTab]);
+
+
+  //debounce para la carga de datos
+  useEffect(() => {
+    const debounceCargarDatos = debounce( ()=> {if(activeTab === "Carrera") {
+      cargarCarreras(page, pageSize, searchTerm);
+    }
+  if(activeTab === "Areas") { 
+    cargarAreasEstudio(page, pageSize, searchTerm);
+  }
+  if(activeTab === "Casos") {
+    cargarCasosEstudio(page, pageSize, searchTerm);
+  }
+  }, 500) ;
+  
+  debounceCargarDatos();
+  return () => debounceCargarDatos.cancel();
+  } , [searchTerm, activeTab, page, pageSize] );
+
+
+
+
   const onPageChange = (event) => {
     setPage(event.page + 1);
     setPageSize(event.rows);

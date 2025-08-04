@@ -43,6 +43,7 @@ export default function RegistrarArea({
       setCarrerasSeleccionadas([]);
     }
     setTouched(false);
+    
   }, [areaEditar, carreras, visible]);
 
   const carrerasDropdown = (carreras || []).map((c) => ({

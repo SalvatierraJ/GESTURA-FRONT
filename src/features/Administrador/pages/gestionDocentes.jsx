@@ -6,6 +6,7 @@ import NuevoDocente from "@/features/Administrador/components/modal-nuevoDocente
 import { useDocentesStore } from "@/store/docentes.store";
 import InputBuscar from "@/components/searchInput";
 import { Paginator } from "primereact/paginator";
+import debounce from "lodash.debounce";
 const TeacherRow = ({
   docente,
   handleEditar,
@@ -95,6 +96,27 @@ const MainContent = () => {
   useEffect(() => {
     if (activeTab === "docentes") cargarDocentes(page, pageSize);
   }, [activeTab,page, pageSize, cargarDocentes]);
+
+
+
+//debounce
+useEffect(() => {
+  const debounceCargarDatos = debounce(() => {
+    if (activeTab === "docentes") {
+      cargarDocentes(page, pageSize, searchTerm);
+
+    }
+  }, 500);
+  
+  debounceCargarDatos();
+  
+  return () => debounceCargarDatos.cancel();
+}, [searchTerm, activeTab, page, pageSize, cargarDocentes]);
+
+
+
+
+
   useEffect(() => {
     setPage(1);
     setPageSize(10);
