@@ -17,7 +17,7 @@ export default function HorarioModuloTable({
 
   const horarioOptions = HORARIOS_FIJOS.map((h) => ({
     label: `${h.label} (${h.turno}${h.extra ? ", " + h.extra : ""})`,
-    value: h.label, // usamos el label como valor de horario
+    value: h.label, 
   }));
 
   const [modulosSeleccionados, setModulosSeleccionados] = useState(
@@ -123,8 +123,9 @@ export default function HorarioModuloTable({
                   <div className="block text-base break-words max-w-[170px] whitespace-pre-line">
                     {mat.nombre}
                   </div>
+                  
                   <div className="block text-xs text-gray-700">
-                    {mat.siglas}, semestre: {mat.semestre}
+                    Codigo: {mat.codigo} , Siglas:{mat.siglas}, semestre: {mat.semestre}
                   </div>
                   <div className="block text-xs text-red-600">
                     {mat.horariosAbiertos?.[0]?.bimodular ? "Bimodular" : ""}
