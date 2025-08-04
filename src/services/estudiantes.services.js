@@ -1,7 +1,7 @@
 import { apiFetch } from "./api";
 
-export async function fetchEstudiantes(page, pageSize) {
-  return apiFetch(`/student-managament/estudiantes/${page}/${pageSize}`, {
+export async function fetchEstudiantes(page, pageSize, word = '') {
+  return apiFetch(`/student-managament/estudiantes/${page}/${pageSize}${word.trim() != null ? '/'+word : ''}`, {
     method: "GET",
   });
 }

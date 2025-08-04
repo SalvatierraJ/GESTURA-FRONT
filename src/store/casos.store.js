@@ -12,7 +12,7 @@ import {
   crearCasosEstudio,
   fetchCasosEstudio,
   updateStateCasoEstudio,
-  updateCasoEstudio
+  updateCasoEstudio,
 } from "@/services/casos.services";
 
 export const useCasosStore = create((set) => ({
@@ -26,10 +26,10 @@ export const useCasosStore = create((set) => ({
   loading: false,
   error: null,
 
-  cargarCarreras: async (page, pageSize) => {
+  cargarCarreras: async (page, pageSize, searchTerm = "") => {
     set({ loading: true, error: null });
     try {
-      const data = await fetchCarreras(page, pageSize);
+      const data = await fetchCarreras(page, pageSize, searchTerm);
       set({
         carreras: data.items,
         total: data.total,
@@ -104,10 +104,10 @@ export const useCasosStore = create((set) => ({
       set({ error, loading: false });
     }
   },
-  cargarAreasEstudio: async (page, pageSize) => {
+  cargarAreasEstudio: async (page, pageSize, word = '') => {
     set({ loading: true, error: null });
     try {
-      const data = await fetchAreasEstudio(page, pageSize);
+      const data = await fetchAreasEstudio(page, pageSize, word);
       set({
         areas: data.items,
         total: data.total,
@@ -161,10 +161,10 @@ export const useCasosStore = create((set) => ({
       throw err;
     }
   },
-  cargarCasosEstudio: async (page, pageSize) => {
+  cargarCasosEstudio: async (page, pageSize, word = '') => {
     set({ loading: true, error: null });
     try {
-      const data = await fetchCasosEstudio(page, pageSize);
+      const data = await fetchCasosEstudio(page, pageSize, word);
       set({
         casos: data.items,
         total: data.total,

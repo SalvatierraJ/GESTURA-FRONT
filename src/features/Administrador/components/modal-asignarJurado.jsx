@@ -201,7 +201,8 @@ useEffect(() => {
             {/* Switch de sorteo */}
              
             <div className="flex items-center gap-3">
-               {TituloModal != "Editar Jurados" && ( <>
+            
+               {TituloModal !== "Editar Jurados" && ( <>
               <InputSwitch
                 checked={sorteo}
                 onChange={(e) => setSorteo(e.value)}
