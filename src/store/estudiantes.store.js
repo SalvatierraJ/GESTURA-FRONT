@@ -13,10 +13,10 @@ export const useEstudiantesStore = create((set) => ({
   pageSize: 10,
   loading: false,
   error: null,
-  cargarEstudiantes: async (page, pageSize) => {
+  cargarEstudiantes: async (page, pageSize, word = '') => {
     set({ loading: true, error: null });
     try {
-      const data = await fetchEstudiantes(page, pageSize);
+      const data = await fetchEstudiantes(page, pageSize, word);
       set({
         estudiantes: data.items,
         total: data.total,

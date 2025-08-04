@@ -9,6 +9,7 @@ import AddNota from "@/features/Administrador/components/agregarNota";
 import { Paginator } from "primereact/paginator";
 import InputBuscar from "@/components/searchInput";
 import ArchivoDefensa from "@/features/Administrador/components/defensasProgramadas/descargarCasoEstudio";
+import debounce from "lodash.debounce";
 
 const truncarTexto = (texto, maxLength = 30) => {
   return texto.length > maxLength
@@ -131,7 +132,7 @@ const MainContent = () => {
     setJuradosrray({});
     setSelected([]);
     
-    setTituloModal(editar ? "Editar Jurados ":  "Asignar Jurados");
+    setTituloModal(editar ? "Editar Jurados":  "Asignar Jurados");
     if(!editar){
     setSelected((prev) => {
       const newSelected = prev.includes(id_defensa)
@@ -170,15 +171,25 @@ const MainContent = () => {
       setJuradosrray(juradosCompletos);
 
       setTimeout(() => {
-        let botonModal = document.querySelectorAll(
-          "#root > div > div > div > div > div.p-6.flex.flex-col.flex-1.overflow-auto > div > div.flex.items-center.justify-between.px-6.py-4.border-b.border-gray-200 > div > button"
-        );
-        if (botonModal.length > 0) {
-          botonModal[0].click();
-        }
+        let botonModal =  document.querySelector('[aria-label="Asignar Jurados"]');
+      
+          console.log(botonModal);
+          botonModal.click();
       }, 100);
     }
   };
+  useEffect(()=>{
+     const debounceCargarDatos = debounce(() => {
+    if (activeTab === "Interna") {
+      cargarDefensasInterna(page, pageSize, "Examen de grado Interna", searchTerm); } 
+    else if (activeTab === "Externa")
+{
+      cargarDefensasExternas(page, pageSize, "Examen de grado Externa", searchTerm); } 
+}, 500);
+debounceCargarDatos();
+  return () => debounceCargarDatos.cancel();
+
+  }, [searchTerm, activeTab, pageSize, page, cargarDefensasInterna, cargarDefensasExternas]);
 
   const actions = [
     <InputBuscar

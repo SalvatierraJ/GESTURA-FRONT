@@ -1,7 +1,7 @@
 import { apiFetch } from "./api";
 
-export async function fetchDefensas(page, pageSize,tipoDefensa) {
-  return apiFetch(`/defensasmanagament/detalles/${page}/${pageSize}/${tipoDefensa}`, {
+export async function fetchDefensas(page, pageSize,tipoDefensa, word = '') {
+  return apiFetch(`/defensasmanagament/detalles/${page}/${pageSize}/${tipoDefensa}${word.trim() != '' ? '/'+word : ''}`, {
     method: "GET",
   });
 }

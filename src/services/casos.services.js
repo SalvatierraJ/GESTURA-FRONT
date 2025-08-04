@@ -1,8 +1,10 @@
 import { apiFetch } from "./api";
 
 //Funciones para las carreras
-export async function fetchCarreras(page, pageSize) {
-  return apiFetch(`/case-study-management/carreras/${page}/${pageSize}`, {
+export async function fetchCarreras(page, pageSize, searchTerm = "") {
+  const url = `/case-study-management/carreras/${page}/${pageSize}${searchTerm != "" ? `/${searchTerm}` : ''}`;
+  console.log(url);
+  return apiFetch(url, {
     method: "GET",
   });
 }
@@ -37,8 +39,8 @@ export async function fetchFacultades() {
 }
 
 //Funciones para las areas de estudio
-export async function fetchAreasEstudio(page, pageSize) {
-  return apiFetch(`/case-study-management/areas/${page}/${pageSize}`, {
+export async function fetchAreasEstudio(page, pageSize, word = '') {
+  return apiFetch(`/case-study-management/areas/${page}/${pageSize}${word.trim() != '' ? '/'+word.trim() : '' }`, {
     method: "GET",
   });
 }
@@ -65,8 +67,8 @@ export async function updateStateAreaEstudio({ id, estado }) {
 }
 
 //funciones para los casos de estudio
-export async function fetchCasosEstudio(page, pageSize) {
-  return apiFetch(`/case-study-management/casos-estudio/${page}/${pageSize}`, {
+export async function fetchCasosEstudio(page, pageSize, word = '') {
+  return apiFetch(`/case-study-management/casos-estudio/${page}/${pageSize}${word.trim() != '' ? '/' + word.trim() : ''}`, {
     method: "GET",
   });
 }
@@ -97,8 +99,14 @@ export async function updateStateCasoEstudio({ id, estado }) {
   });
 }
 
-
-export async function updateCasoEstudio({ id, Titulo, Autor, Tema, Fecha_Creacion, id_area }) {
+export async function updateCasoEstudio({
+  id,
+  Titulo,
+  Autor,
+  Tema,
+  Fecha_Creacion,
+  id_area,
+}) {
   return apiFetch(`/case-study-management/casos/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
