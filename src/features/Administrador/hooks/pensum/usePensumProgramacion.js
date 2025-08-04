@@ -18,6 +18,7 @@ export default function usePensumProgramacion() {
     updatePrerequisitos,
     updateEquivalencias,
   } = usePensumStore();
+  const [loadingBusqueda, setLoadingBusqueda] = useState(false);
 
   const HORARIOS_FIJOS = [
     { label: "07:15-10:00", turno: "MAÑANA", extra: "" },
@@ -69,11 +70,22 @@ export default function usePensumProgramacion() {
   const handleSearch = async (e) => {
     e.preventDefault();
     if (!busqueda.trim()) return;
-    await fetchPensum(busqueda.trim());
+    setLoadingBusqueda(true);
+    try {
+      await fetchPensum(busqueda.trim());
+    } finally {
+      setLoadingBusqueda(false);
+    }
   };
+
   useEffect(() => {
     if (!busqueda) clearPensum();
   }, [busqueda, clearPensum]);
+
+  useEffect(() => {
+    setCart([]);
+  }, [estudiante?.Id_Persona]);
+
   function horasSolapan(a1, a2, b1, b2) {
     return a1 < b2 && b1 < a2;
   }
@@ -364,5 +376,6 @@ export default function usePensumProgramacion() {
     materiasPorSemestreAjuste,
     semImparesAjuste,
     semParesAjuste,
+    loadingBusqueda
   };
 }

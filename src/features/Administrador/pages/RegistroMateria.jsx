@@ -86,6 +86,7 @@ export default function PensumEstudiante() {
     materiasPorSemestreAjuste,
     semImparesAjuste,
     semParesAjuste,
+    loadingBusqueda
   } = usePensumProgramacion();
   const { setRightSidebar, setSuggestions, setCartCount } = useOutletContext();
   const {
@@ -181,7 +182,12 @@ export default function PensumEstudiante() {
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </form>
-            {!materias.length ? (
+            {loadingBusqueda ? (
+              <div className="flex justify-center items-center my-8">
+                <i className="pi pi-spin pi-spinner text-4xl text-red-700" />
+                <span className="ml-4 text-black">Buscando estudiante...</span>
+              </div>
+            ) : !materias.length ? (
               <div className="text-center text-black">
                 Ingrese el número de registro del estudiante y presione Enter.
               </div>

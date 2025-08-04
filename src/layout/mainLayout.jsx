@@ -12,13 +12,10 @@ const MainLayout = () => {
   const [cartCount, setCartCount] = useState(0);
   const location = useLocation();
 
-  const rutasConSidebar = [
-  "/home/registro-materia",
-  "/home/pruebaConceptual",
-];
+  const rutasConSidebar = ["/home/registro-materia", "/home/pruebaConceptual"];
 
-const showRightSidebar = rutasConSidebar.includes(location.pathname) && !!rightSidebar;
-
+  const showRightSidebar =
+    rutasConSidebar.includes(location.pathname) && !!rightSidebar;
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -34,7 +31,7 @@ const showRightSidebar = rutasConSidebar.includes(location.pathname) && !!rightS
                 setRightSidebar,
                 rightSidebar,
                 setSuggestions,
-                setCartCount
+                setCartCount,
               }}
             />
           </div>
