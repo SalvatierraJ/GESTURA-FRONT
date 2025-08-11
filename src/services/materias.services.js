@@ -60,3 +60,12 @@ export const actualizarEquivalenciasMateria = async (idMateria, equivalencias) =
     body: JSON.stringify({ equivalencias }),
   });
 };
+
+
+export const recomendarHorariosMateriasFaltantes = async (carrera, pensum) => {
+  const params = new URLSearchParams({
+    carrera: carrera,
+    pensum: String(pensum),
+  }).toString();
+  return apiFetch(`/registro-materia/recomendar-horarios?${params}`);
+};

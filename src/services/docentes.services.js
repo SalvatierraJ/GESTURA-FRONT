@@ -1,9 +1,14 @@
 import { apiFetch } from "./api";
 
-export async function fetchDocentes(page, pageSize, word = '') {
-  return apiFetch(`/docentesmanagement/docentes/${page}/${pageSize}${word.trim() != '' ? '/'+word : ''}`, {
-    method: "GET",
-  });
+export async function fetchDocentes(page, pageSize, word = "") {
+  return apiFetch(
+    `/docentesmanagement/docentes/${page}/${pageSize}${
+      word.trim() != "" ? "/" + word : ""
+    }`,
+    {
+      method: "GET",
+    }
+  );
 }
 
 export async function createDocente({ Persona, area_especializacion }) {
@@ -23,4 +28,19 @@ export async function updateStateDocente({ id, estado }) {
     method: "PUT",
     body: JSON.stringify({ estado }),
   });
-}   
+}
+
+export async function materiaHistorialDocente() {
+  return apiFetch(`/registro-materia/historial-docente-materias`, {
+    method: "GET",
+  });
+}
+
+
+export async function sugerirDocentePorMateria(payload) {
+  return apiFetch(`/registro-materia/sugerir-asignacion/materia`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
