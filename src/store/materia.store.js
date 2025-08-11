@@ -8,13 +8,16 @@ import {
   getCarrerasConPensum,
   actualizarPrerrequisitosMateria,
   actualizarEquivalenciasMateria,
+  recomendarHorariosMateriasFaltantes,
 } from "@/services/materias.services";
 
 export const usePensumStore = create((set) => ({
   pensum: [],
-  ajustesPensum:[],
-  carrerasConPensum:[],
-  materiasIdNombrePensum:[],
+  ajustesPensum: [],
+  carrerasConPensum: [],
+  materiasIdNombrePensum: [],
+  materiasRecomendadas: [],
+  loadingMateriasRecomendadas: false,
   estudiantesMaterias: {
     items: [],
     total: 0,
@@ -93,7 +96,7 @@ export const usePensumStore = create((set) => ({
     try {
       const response = await registrarInscripcionMateria(body);
       set({ loadingRegistrar: false });
-      return response; 
+      return response;
     } catch (error) {
       set({ loadingRegistrar: false });
       console.error("Error al registrar inscripción", error);
@@ -114,17 +117,28 @@ export const usePensumStore = create((set) => ({
     set({ loadingPensum: true });
     try {
       const data = await getPensumCarrera(arrayCarreras);
-      set({ ajustesPensum: data, loadingPensum: false,materiasIdNombrePensum: data.materiasIdNombrePensum });
+      set({
+        ajustesPensum: data,
+        loadingPensum: false,
+        materiasIdNombrePensum: data.materiasIdNombrePensum,
+      });
     } catch (error) {
-      set({ ajustesPensum: [], loadingPensum: false, materiasIdNombrePensum:[] });
+      set({
+        ajustesPensum: [],
+        loadingPensum: false,
+        materiasIdNombrePensum: [],
+      });
       console.error("Error al cargar pensum de carrera", error);
     }
   },
   updatePrerequisitos: async (idMateria, prerrequisitos) => {
     set({ loadingActualizarPrereq: true });
     try {
-      const res = await actualizarPrerrequisitosMateria(idMateria, prerrequisitos);
-      
+      const res = await actualizarPrerrequisitosMateria(
+        idMateria,
+        prerrequisitos
+      );
+
       set({ loadingActualizarPrereq: false });
       return res;
     } catch (error) {
@@ -136,7 +150,10 @@ export const usePensumStore = create((set) => ({
   updateEquivalencias: async (idMateria, equivalencias) => {
     set({ loadingActualizarEquiv: true });
     try {
-      const res = await actualizarEquivalenciasMateria(idMateria, equivalencias);
+      const res = await actualizarEquivalenciasMateria(
+        idMateria,
+        equivalencias
+      );
 
       set({ loadingActualizarEquiv: false });
       return res;
@@ -145,7 +162,22 @@ export const usePensumStore = create((set) => ({
       throw error;
     }
   },
-  clearAjustesPensum:()=> set({ajustesPensum:[]}),
+  fetchMateriasRecomendadas: async (carrera, pensum) => {
+    set({ loadingMateriasRecomendadas: true });
+    try {
+      const resp = await recomendarHorariosMateriasFaltantes(carrera, pensum);
+      set({
+        materiasRecomendadas: resp.materias || [],
+        loadingMateriasRecomendadas: false,
+      });
+    } catch (error) {
+      set({ materiasRecomendadas: [], loadingMateriasRecomendadas: false });
+      console.error("Error al recomendar materias", error);
+    }
+  },
+
+  clearMateriasRecomendadas: () => set({ materiasRecomendadas: [] }),
+  clearAjustesPensum: () => set({ ajustesPensum: [] }),
   clearPensum: () => set({ pensum: [] }),
   clearEstudiantesMaterias: () =>
     set({
