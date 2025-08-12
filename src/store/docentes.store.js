@@ -6,6 +6,8 @@ import {
   updateStateDocente,
   materiaHistorialDocente,
   sugerirDocentePorMateria,
+  asignarDocenteMateria,
+  desasignarDocenteDeHorario,
 } from "@/services/docentes.services";
 
 // type IaBest = { materia_id: string; docente_id: string; razon: string };
@@ -37,12 +39,21 @@ export const useDocentesStore = create((set, get) => ({
   errorHistorial: null,
   loading: false,
   error: null,
-
+  asignando: {},
+  asignarError: null,
   iaLoading: false,
   iaError: null,
   /** { [materiaId]: { best, candidatos, raw } } */
   iaSugerencias: {},
-
+  setDocenteLocal: (id_horario, id_docente) => {
+    set((state) => ({
+      materiasHistorial: (state.materiasHistorial || []).map((m) =>
+        String(m.id) === String(id_horario)
+          ? { ...m, id_docente: id_docente != null ? String(id_docente) : "" }
+          : m
+      ),
+    }));
+  },
   // --------- CRUD docentes ----------
   cargarDocentes: async (page, pageSize, word = "") => {
     set({ loading: true, error: null });
@@ -186,6 +197,44 @@ export const useDocentesStore = create((set, get) => ({
       set({ iaError: error, iaLoading: false });
       throw error;
     }
+  },
+    guardarAsignacion: async (id_horario, id_docente) => {
+    const idKey = String(id_horario);
+
+    // Snapshot para revertir si falla
+    const prevMaterias = get().materiasHistorial;
+
+    // Optimista: marca loading y aplica en memoria
+    set((state) => ({
+      asignando: { ...state.asignando, [idKey]: true },
+      asignarError: null,
+    }));
+    get().setDocenteLocal(id_horario, id_docente);
+
+    try {
+      const resp = await asignarDocenteMateria({
+        id_horario: Number(id_horario),
+        id_docente: id_docente != null ? Number(id_docente) : null,
+      });
+
+      return resp;
+    } catch (err) {
+      set({
+        materiasHistorial: prevMaterias,
+        asignarError: err,
+      });
+      throw err;
+    } finally {
+      set((state) => {
+        const next = { ...state.asignando };
+        delete next[idKey];
+        return { asignando: next };
+      });
+    }
+  },
+
+  desasignarDocente: async (id_horario) => {
+    return get().guardarAsignacion(id_horario, null);
   },
 
   limpiarSugerenciasIA: () => {

@@ -36,11 +36,24 @@ export async function materiaHistorialDocente() {
   });
 }
 
-
 export async function sugerirDocentePorMateria(payload) {
   return apiFetch(`/registro-materia/sugerir-asignacion/materia`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+}
+
+export async function asignarDocenteMateria({ id_horario, id_docente }) {
+  return apiFetch(`/registro-materia/asignar-docente-materia`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      id_horario: Number(id_horario),
+      id_docente: id_docente != null ? Number(id_docente) : null,
+    }),
+  });
+}
+export async function desasignarDocenteDeHorario(id_horario) {
+  return asignarDocenteMateria({ id_horario, id_docente: null });
 }
