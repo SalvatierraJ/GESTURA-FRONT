@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.6](https://github.com/SalvatierraJ/GESTURA-FRONT/compare/v0.0.5...v0.0.6) (2025-08-13)
+
+
+### Features
+
+* se agrego a todos los modulos el CRUD completo de altas y bajas, excepto a los modulos con informacion inmutable ([9471a19](https://github.com/SalvatierraJ/GESTURA-FRONT/commit/9471a199d36afa0d9cc6a38e19fb428068c10283))
+
 ### [0.0.5](https://github.com/SalvatierraJ/GESTURA-FRONT/compare/v0.0.4...v0.0.5) (2025-08-11)
 
 ### [0.0.4](https://github.com/SalvatierraJ/GESTURA-FRONT/compare/v0.0.3...v0.0.4) (2025-08-04)
