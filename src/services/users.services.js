@@ -19,3 +19,15 @@ export async function registerUser(body){
          body: JSON.stringify(body),
     })
 }
+
+export async function softDeleteUsuario(id) {
+  return apiFetch(`/auth/eliminar/${id}`, {
+    method: "DELETE",
+  });
+}
+
+export async function restoreUsuario(id) {
+  return apiFetch(`/auth/${id}/restaurar`, {
+    method: "PATCH",
+  });
+}

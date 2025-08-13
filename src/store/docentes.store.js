@@ -3,29 +3,16 @@ import {
   fetchDocentes,
   createDocente,
   updateDocente,
-  updateStateDocente,
+  // endpoint unificado + helpers
+  setEstadoDocente,
+  softDeleteDocente,
+  restoreDocente,
+  // historial / IA / asignaciones
   materiaHistorialDocente,
   sugerirDocentePorMateria,
   asignarDocenteMateria,
   desasignarDocenteDeHorario,
 } from "@/services/docentes.services";
-
-// type IaBest = { materia_id: string; docente_id: string; razon: string };
-// type IaCandidato = {
-//   docente_id: string;
-//   nombre: string;
-//   vecesDictada: number;
-//   gestionReciente: string | null;
-//   score: number;
-// };
-
-// type IaResult = {
-//   best: IaBest | null;
-//   candidatos: IaCandidato[];
-//   raw?: any;
-// };
-
-// type IaSugerenciasState = Record<string, IaResult>;
 
 export const useDocentesStore = create((set, get) => ({
   docentes: [],
@@ -37,50 +24,47 @@ export const useDocentesStore = create((set, get) => ({
   docentesHistorial: [],
   loadingHistorial: false,
   errorHistorial: null,
+
   loading: false,
   error: null,
+
   asignando: {},
   asignarError: null,
+
   iaLoading: false,
   iaError: null,
-  /** { [materiaId]: { best, candidatos, raw } } */
-  iaSugerencias: {},
-  setDocenteLocal: (id_horario, id_docente) => {
-    set((state) => ({
-      materiasHistorial: (state.materiasHistorial || []).map((m) =>
-        String(m.id) === String(id_horario)
-          ? { ...m, id_docente: id_docente != null ? String(id_docente) : "" }
-          : m
-      ),
-    }));
-  },
-  // --------- CRUD docentes ----------
+  iaSugerencias: {}, 
+
+  // ------------------ LISTADO ------------------
   cargarDocentes: async (page, pageSize, word = "") => {
     set({ loading: true, error: null });
     try {
       const data = await fetchDocentes(page, pageSize, word);
       set({
-        docentes: data.items,
-        total: data.total,
-        page: data.page,
-        pageSize: data.pageSize,
+        docentes: data.items || [],
+        total: data.total || 0,
+        page: data.page || page,
+        pageSize: data.pageSize || pageSize,
         loading: false,
       });
     } catch (error) {
-      set({ error, loading: false });
+      set({ error: error?.message || String(error), loading: false });
     }
   },
 
+  // ------------------ CRUD ------------------
   nuevoDocente: async ({ Persona, area_especializacion }) => {
     set({ loading: true, error: null });
     try {
-      const data = await createDocente({ Persona, area_especializacion });
+      const creado = await createDocente({ Persona, area_especializacion });
       set((state) => ({
-        docentes: [...state.docentes, data],
+        docentes: [...state.docentes, creado],
         loading: false,
       }));
+      return creado;
     } catch (error) {
-      set({ error, loading: false });
+      set({ error: error?.message || String(error), loading: false });
+      throw error;
     }
   },
 
@@ -89,32 +73,66 @@ export const useDocentesStore = create((set, get) => ({
     try {
       const data = await updateDocente({ id, Persona, area_especializacion });
       set((state) => ({
-        docentes: state.docentes.map((docente) =>
-          docente.id === id ? { ...docente, ...data } : docente
+        docentes: state.docentes.map((d) =>
+          d.id_tribunal === id ? { ...d, ...data } : d
         ),
         loading: false,
       }));
+      return data;
     } catch (error) {
-      set({ error, loading: false });
+      set({ error: error?.message || String(error), loading: false });
+      throw error;
     }
   },
 
+  // ------------------ ESTADO / BORRADO LÓGICO ------------------
   actualizarEstadoDocente: async ({ id, estado }) => {
     set({ loading: true, error: null });
     try {
-      const data = await updateStateDocente({ id, estado });
+      const data = await setEstadoDocente(id, estado);
       set((state) => ({
-        docentes: state.docentes.map((docente) =>
-          docente.id === id ? { ...docente, ...data } : docente
+        docentes: state.docentes.map((d) =>
+          d.id_tribunal === id ? { ...d, estado: data.estado } : d
         ),
         loading: false,
       }));
+      return data;
     } catch (error) {
-      set({ error, loading: false });
+      set({ error: error?.message || String(error), loading: false });
+      throw error;
     }
   },
 
-  // --------- Historial materias/docentes ----------
+  borrarDocente: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await softDeleteDocente(id);
+      set((state) => ({
+        docentes: state.docentes.filter((d) => d.id_tribunal !== id),
+        loading: false,
+      }));
+      return res;
+    } catch (error) {
+      set({ error: error?.message || String(error), loading: false });
+      throw error;
+    }
+  },
+
+  restaurarDocente: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const res = await restoreDocente(id);
+      const { page, pageSize } = get();
+      await get().cargarDocentes(page, pageSize);
+      set({ loading: false });
+      return res;
+    } catch (error) {
+      set({ error: error?.message || String(error), loading: false });
+      throw error;
+    }
+  },
+
+  // ------------------ HISTORIAL ------------------
   cargarHistorialDocenteMaterias: async () => {
     set({ loadingHistorial: true, errorHistorial: null });
     try {
@@ -137,7 +155,7 @@ export const useDocentesStore = create((set, get) => ({
     });
   },
 
-  // --------- IA: build payload para UNA materia ----------
+  // ------------------ IA ------------------
   _buildPayloadIA: (materiaId) => {
     const { materiasHistorial, docentesHistorial } = get();
 
@@ -198,13 +216,22 @@ export const useDocentesStore = create((set, get) => ({
       throw error;
     }
   },
-    guardarAsignacion: async (id_horario, id_docente) => {
+
+  // ------------------ ASIGNACIONES ------------------
+  setDocenteLocal: (id_horario, id_docente) => {
+    set((state) => ({
+      materiasHistorial: (state.materiasHistorial || []).map((m) =>
+        String(m.id) === String(id_horario)
+          ? { ...m, id_docente: id_docente != null ? String(id_docente) : "" }
+          : m
+      ),
+    }));
+  },
+
+  guardarAsignacion: async (id_horario, id_docente) => {
     const idKey = String(id_horario);
+    const prev = get().materiasHistorial;
 
-    // Snapshot para revertir si falla
-    const prevMaterias = get().materiasHistorial;
-
-    // Optimista: marca loading y aplica en memoria
     set((state) => ({
       asignando: { ...state.asignando, [idKey]: true },
       asignarError: null,
@@ -216,13 +243,9 @@ export const useDocentesStore = create((set, get) => ({
         id_horario: Number(id_horario),
         id_docente: id_docente != null ? Number(id_docente) : null,
       });
-
       return resp;
     } catch (err) {
-      set({
-        materiasHistorial: prevMaterias,
-        asignarError: err,
-      });
+      set({ materiasHistorial: prev, asignarError: err });
       throw err;
     } finally {
       set((state) => {
@@ -237,9 +260,7 @@ export const useDocentesStore = create((set, get) => ({
     return get().guardarAsignacion(id_horario, null);
   },
 
-  limpiarSugerenciasIA: () => {
-    set({ iaSugerencias: {}, iaError: null });
-  },
+  limpiarSugerenciasIA: () => set({ iaSugerencias: {}, iaError: null }),
 
   getIaBestFor: (materiaId) => {
     const s = get().iaSugerencias[String(materiaId)];

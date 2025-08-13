@@ -13,6 +13,8 @@ export default function ModalRegistrarEstudiante({
   estudianteEditar = null,
   onSuccess,
 }) {
+
+
   const [saving, setSaving] = useState(false);
 
   const [form, setForm] = useState({
@@ -30,7 +32,10 @@ export default function ModalRegistrarEstudiante({
 
   const { carreras, cargarCarreras } = useCasosStore();
   const { crearEstudiantes, editarEstudiante } = useEstudiantesStore();
-
+    const carrerasDropdown = (carreras || []).map((c) => ({
+    label: c.nombre_carrera,
+    value: Number(c.id_carrera),
+  }));
   useEffect(() => {
     if (visible && !carreras?.length) {
       cargarCarreras(1, 1000);
@@ -38,7 +43,9 @@ export default function ModalRegistrarEstudiante({
   }, [visible, carreras?.length]);
 
   useEffect(() => {
-    if (estudianteEditar && visible) {
+    if (!visible) return;
+
+    if (estudianteEditar) {
       setForm({
         nombre: estudianteEditar.nombre ?? "",
         apellido1: estudianteEditar.apellido1 ?? "",
@@ -46,11 +53,10 @@ export default function ModalRegistrarEstudiante({
         correo: estudianteEditar.correo ?? "",
         telefono: estudianteEditar.telefono ?? "",
         ci: estudianteEditar.ci ?? "",
-        carrera: estudianteEditar.carrera ?? null,
+        carrera: null,
         registro: estudianteEditar.nroRegistro ?? "",
       });
-      setTouched({});
-    } else if (visible && !estudianteEditar) {
+    } else {
       setForm({
         nombre: "",
         apellido1: "",
@@ -61,9 +67,35 @@ export default function ModalRegistrarEstudiante({
         carrera: null,
         registro: "",
       });
-      setTouched({});
     }
+    setTouched({});
   }, [estudianteEditar, visible]);
+
+  useEffect(() => {
+    if (!visible || !estudianteEditar || !carreras?.length) return;
+
+    const idDeDto =
+      estudianteEditar.id_carrera ??
+      estudianteEditar.carrera_id ??
+      (typeof estudianteEditar.carrera === "number"
+        ? estudianteEditar.carrera
+        : null);
+
+    let carreraId = idDeDto ? Number(idDeDto) : null;
+
+    if (!carreraId) {
+      const nombre = (estudianteEditar.carrera ?? "")
+        .toString()
+        .trim()
+        .toLowerCase();
+      const match = (carreras || []).find(
+        (c) => (c.nombre_carrera || "").toLowerCase() === nombre
+      );
+      carreraId = match ? Number(match.id_carrera) : null;
+    }
+
+    setForm((prev) => ({ ...prev, carrera: carreraId }));
+  }, [visible, estudianteEditar, carreras]);
 
   const errors = {};
   if (touched.nombre && !form.nombre.trim())
@@ -191,10 +223,7 @@ export default function ModalRegistrarEstudiante({
     </div>
   );
 
-  const carrerasDropdown = (carreras || []).map((c) => ({
-    label: c.nombre_carrera,
-    value: c.id_carrera,
-  }));
+
 
   return (
     <Dialog
