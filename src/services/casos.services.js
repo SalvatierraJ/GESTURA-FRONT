@@ -1,17 +1,18 @@
 import { apiFetch } from "./api";
 
-//Funciones para las carreras
+// ====== Carreras ======
+
 export async function fetchCarreras(page, pageSize, searchTerm = "") {
-  const url = `/case-study-management/carreras/${page}/${pageSize}${searchTerm != "" ? `/${searchTerm}` : ''}`;
-  console.log(url);
-  return apiFetch(url, {
-    method: "GET",
-  });
+  const url = `/case-study-management/carreras/${page}/${pageSize}${
+    searchTerm !== "" ? `/${encodeURIComponent(searchTerm)}` : ""
+  }`;
+  return apiFetch(url, { method: "GET" });
 }
 
 export async function createCarrera({ nombre_carrera, id_facultad }) {
   return apiFetch("/case-study-management/crear-carrera", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nombre_carrera, id_facultad }),
   });
 }
@@ -19,35 +20,58 @@ export async function createCarrera({ nombre_carrera, id_facultad }) {
 export async function updateCarrera({ id, nombre_carrera, id_facultad }) {
   return apiFetch(`/case-study-management/actualizar-carrera/${id}`, {
     method: "PUT",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nombre_carrera, id_facultad }),
   });
 }
 
-export async function updateStateCarrera({ id, estado }) {
-  return apiFetch(`/case-study-management/actualizar-estado-carrera/${id}`, {
-    method: "PUT",
-    body: JSON.stringify({ estado }),
+export async function updateCarreraState(id, payload = {}) {
+  const body = {};
+  if (typeof payload.delete === "boolean") body.delete = payload.delete;
+  if (typeof payload.estado === "boolean") body.estado = payload.estado;
+
+  const hasDelete = typeof body.delete === "boolean";
+  const hasEstado = typeof body.estado === "boolean";
+  if (!hasDelete && !hasEstado) throw new Error('Debes enviar "delete" o "estado".');
+  if (hasDelete && hasEstado) throw new Error('No envíes "delete" y "estado" a la vez.');
+
+  return apiFetch(`/case-study-management/${id}/state`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
 }
 
-//Funciones para las facultades
+// Wrappers cómodos
+export const softDeleteCarrera = (id) => updateCarreraState(id, { delete: true });
+export const restoreCarrera    = (id) => updateCarreraState(id, { delete: false });
+export const setEstadoCarrera  = (id, estado) => updateCarreraState(id, { estado });
+
+// COMPAT: tu función antigua ahora usa el nuevo endpoint
+export async function updateStateCarrera({ id, estado }) {
+  return setEstadoCarrera(id, estado);
+}
+
+// ====== Facultades ======
 
 export async function fetchFacultades() {
-  return apiFetch("/case-study-management/facultades", {
-    method: "GET",
-  });
+  return apiFetch("/case-study-management/facultades", { method: "GET" });
 }
 
-//Funciones para las areas de estudio
-export async function fetchAreasEstudio(page, pageSize, word = '') {
-  return apiFetch(`/case-study-management/areas/${page}/${pageSize}${word.trim() != '' ? '/'+word.trim() : '' }`, {
-    method: "GET",
-  });
+// ====== Áreas de estudio ======
+export async function fetchAreasEstudio(page, pageSize, word = "") {
+  return apiFetch(
+    `/case-study-management/areas/${page}/${pageSize}${
+      word.trim() !== "" ? "/" + encodeURIComponent(word.trim()) : ""
+    }`,
+    { method: "GET" }
+  );
 }
 
 export async function createAreaEstudio({ nombre_area, carreraIds }) {
   return apiFetch("/case-study-management/crear-area", {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nombre_area, carreraIds }),
   });
 }
@@ -55,28 +79,48 @@ export async function createAreaEstudio({ nombre_area, carreraIds }) {
 export async function updateAreaEstudio({ id, nombre_area, carreraIds }) {
   return apiFetch(`/case-study-management/actualizar-area/${id}`, {
     method: "PUT",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ nombre_area, carreraIds }),
   });
 }
 
-export async function updateStateAreaEstudio({ id, estado }) {
-  return apiFetch(`/case-study-management/actualizar-estado-area/${id}`, {
-    method: "PUT",
-    body: JSON.stringify({ estado }),
+export async function updateAreaState(id, payload = {}) {
+  const body = {};
+  if (typeof payload.delete === "boolean") body.delete = payload.delete;
+  if (typeof payload.estado === "boolean") body.estado = payload.estado;
+
+  const hasDelete = typeof body.delete === "boolean";
+  const hasEstado = typeof body.estado === "boolean";
+  if (!hasDelete && !hasEstado) throw new Error('Debes enviar "delete" o "estado".');
+  if (hasDelete && hasEstado) throw new Error('No envíes "delete" y "estado" a la vez.');
+
+  return apiFetch(`/case-study-management/area/${id}/state`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   });
 }
 
-//funciones para los casos de estudio
-export async function fetchCasosEstudio(page, pageSize, word = '') {
-  return apiFetch(`/case-study-management/casos-estudio/${page}/${pageSize}${word.trim() != '' ? '/' + word.trim() : ''}`, {
-    method: "GET",
-  });
+export const setEstadoAreaEstudio  = (id, estado) => updateAreaState(id, { estado });
+export const softDeleteAreaEstudio = (id) => updateAreaState(id, { delete: true });
+export const restoreAreaEstudio    = (id) => updateAreaState(id, { delete: false });
+
+
+
+// ====== Casos de estudio ======
+
+export async function fetchCasosEstudio(page, pageSize, word = "") {
+  return apiFetch(
+    `/case-study-management/casos-estudio/${page}/${pageSize}${
+      word.trim() !== "" ? "/" + encodeURIComponent(word.trim()) : ""
+    }`,
+    { method: "GET" }
+  );
 }
 
 export async function crearCasosEstudio({ id_area, archivos }) {
   const formData = new FormData();
-
-  formData.append("id_area", id_area);
+  formData.append("id_area", String(id_area));
 
   archivos.forEach((archivo, idx) => {
     formData.append("files", archivo.file);
@@ -88,14 +132,34 @@ export async function crearCasosEstudio({ id_area, archivos }) {
 
   return apiFetch("/case-study-management/crear-casos-estudio", {
     method: "POST",
-    body: formData,
+    body: formData, 
   });
 }
 
-export async function updateStateCasoEstudio({ id, estado }) {
+
+export async function toggleCasoEstudioVisibility({ id, estado }) {
   return apiFetch(`/case-study-management/actualizar-estado-caso/${id}`, {
     method: "PUT",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ estado }),
+  });
+}
+
+
+export async function softDeleteCasoEstudio(id) {
+  return apiFetch(`/case-study-management/actualizar-estado-caso/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ delete: true }),
+  });
+}
+
+
+export async function restoreCasoEstudio(id) {
+  return apiFetch(`/case-study-management/actualizar-estado-caso/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ delete: false }),
   });
 }
 
