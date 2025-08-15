@@ -1,6 +1,24 @@
-import React from "react";
+// DefensaCellTipo.tsx
+import React, { useMemo } from "react";
 import FechaDefensa from "./modal-fechaDefensa";
-import { getUltimaDefensaPorTipo, getDefensaEstado, normalizar } from "@/features/Administrador/utils/gestionEstudiantes/defensas";
+import {
+  getUltimaDefensaPorTipo,
+  getDefensaEstado,
+  normalizar,
+} from "@/features/Administrador/utils/gestionEstudiantes/defensas";
+import { useDefensasStore } from "@/store/defensas.store";
+
+function toDatetimeLocalValue(dateLike) {
+  if (!dateLike) return "";
+  const d = new Date(dateLike);
+  const pad = (n) => String(n).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  const MM = pad(d.getMonth() + 1);
+  const dd = pad(d.getDate());
+  const hh = pad(d.getHours());
+  const mm = pad(d.getMinutes());
+  return `${yyyy}-${MM}-${dd}T${hh}:${mm}`;
+}
 
 export default function DefensaCellTipo({
   tipo,
@@ -9,38 +27,64 @@ export default function DefensaCellTipo({
   cargarEstudiantes,
   page,
   pageSize,
-  onSubmit, 
+  onSubmit,
 }) {
-  const otraTipo = normalizar(tipo) === normalizar("Examen de grado Interna")
-    ? "Examen de grado Externa"
-    : "Examen de grado Interna";
+  const { refreshAllDefensas } = useDefensasStore();
+  const otraTipo =
+    normalizar(tipo) === normalizar("Examen de grado Interna")
+      ? "Examen de grado Externa"
+      : "Examen de grado Interna";
 
-  const defensa = getUltimaDefensaPorTipo(defensas, tipo);
-  const defensaOtra = getUltimaDefensaPorTipo(defensas, otraTipo);
+  const defensa = useMemo(
+    () => getUltimaDefensaPorTipo(defensas, tipo),
+    [defensas, tipo]
+  );
+  const defensaOtra = useMemo(
+    () => getUltimaDefensaPorTipo(defensas, otraTipo),
+    [defensas, otraTipo]
+  );
+
   const disabled =
     normalizar(tipo) === normalizar("Examen de grado Externa") &&
     getDefensaEstado(defensaOtra) !== "APROBADO";
 
-  const puedeCrearNueva = !defensa || getDefensaEstado(defensa) === "REPROBADO";
-  const pendiente = getDefensaEstado(defensa) === "PENDIENTE";
-  const asignado = getDefensaEstado(defensa) === "ASIGNADO";
-  const aprobado = getDefensaEstado(defensa) === "APROBADO";
+  const estado = getDefensaEstado(defensa);
+  const puedeCrearNueva = !defensa || estado === "REPROBADO";
+  const pendiente = estado === "PENDIENTE";
+  const asignado = estado === "ASIGNADO";
+  const aprobado = estado === "APROBADO";
 
-  const handleSuccess = () => cargarEstudiantes(page, pageSize);
+  const initialFechaHora = toDatetimeLocalValue(
+    defensa?.fecha_defensa || defensa?.fecha
+  );
+  const areaAsignada = Boolean(defensa?.id_area ?? defensa?.area);
+  const casoAsignado = Boolean(defensa?.id_casoEstudio ?? defensa?.caso);
+
+  const handleSuccess = async () => {
+    await Promise.all([
+      cargarEstudiantes(page, pageSize),
+      refreshAllDefensas(),
+    ]);
+  };
   const handleSubmit = onSubmit || (() => {});
+
+  const commonModalProps = {
+    estudianteIds: [estudianteId],
+    tipo,
+    onSubmit: handleSubmit,
+    onSuccess: handleSuccess,
+    disabled,
+    initialFechaHora,
+    areaAsignada,
+    casoAsignado,
+  };
 
   if (!defensa || puedeCrearNueva) {
     return (
       <FechaDefensa
-        estudianteIds={[estudianteId]}
-        tipo={tipo}
-        triggerLabel={
-          puedeCrearNueva ? `Asignar ${tipo}` : `Nueva ${tipo}`
-        }
+        {...commonModalProps}
+        triggerLabel={puedeCrearNueva ? `Asignar ${tipo}` : `Nueva ${tipo}`}
         triggerIcon="pi pi-calendar-plus"
-        onSubmit={handleSubmit}
-        disabled={disabled}
-        onSuccess={handleSuccess}
       />
     );
   }
@@ -50,20 +94,18 @@ export default function DefensaCellTipo({
       <span className="flex flex-col gap-2">
         <span
           className={`text-xs font-semibold px-2 py-1 rounded-full ${
-            asignado ? "text-green-800 bg-green-200" : "text-yellow-800 bg-yellow-200"
+            asignado
+              ? "text-green-800 bg-green-200"
+              : "text-yellow-800 bg-yellow-200"
           }`}
         >
-          {`${tipo}: ${getDefensaEstado(defensa)}`}
+          {`${tipo}: ${estado}`}
         </span>
         {pendiente && (
           <FechaDefensa
-            estudianteIds={[estudianteId]}
-            tipo={tipo}
+            {...commonModalProps}
             triggerLabel="Editar Fecha"
             triggerIcon="pi pi-calendar-plus"
-            onSubmit={handleSubmit}
-            disabled={disabled}
-            onSuccess={handleSuccess}
           />
         )}
       </span>
@@ -78,16 +120,12 @@ export default function DefensaCellTipo({
     );
   }
 
-  if (getDefensaEstado(defensa) === "REPROBADO") {
+  if (estado === "REPROBADO") {
     return (
       <FechaDefensa
-        estudianteIds={[estudianteId]}
-        tipo={tipo}
+        {...commonModalProps}
         triggerLabel="Nueva Defensa"
         triggerIcon="pi pi-calendar-plus"
-        onSubmit={handleSubmit}
-        disabled={disabled}
-        onSuccess={handleSuccess}
       />
     );
   }

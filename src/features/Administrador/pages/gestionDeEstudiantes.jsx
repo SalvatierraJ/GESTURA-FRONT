@@ -15,6 +15,8 @@ import usePaginatedSearch from "@/features/Administrador/hooks/gestionEstudiante
 import StudentRow from "@/features/Administrador/components/gestionEstudiantes/StudentRow";
 import useConfirmDelete from "../hooks/gestionEstudiantes/useConfirmDelete";
 
+import { useDefensasStore } from "@/store/defensas.store";
+import { useEffect } from "react";
 export default function EstudiantesPage() {
   const [activeTab, setActiveTab] = useState("ExamendeGrado");
   const [selected, setSelected] = useState([]);
@@ -24,15 +26,14 @@ export default function EstudiantesPage() {
   const { estudiantes, cargarEstudiantes, total, borrarEstudiante } =
     useEstudiantesStore();
 
-  const {
-    page, pageSize, searchTerm, setSearchTerm, onPageChange,
-  } = usePaginatedSearch({
-    activeTab,
-    activeKey: "ExamendeGrado",
-    initialPage: 1,
-    initialPageSize: 10,
-    loader: cargarEstudiantes,
-  });
+  const { page, pageSize, searchTerm, setSearchTerm, onPageChange } =
+    usePaginatedSearch({
+      activeTab,
+      activeKey: "ExamendeGrado",
+      initialPage: 1,
+      initialPageSize: 10,
+      loader: cargarEstudiantes,
+    });
 
   const { confirmOpen, toDelete, askDelete, close } = useConfirmDelete();
 
@@ -53,6 +54,14 @@ export default function EstudiantesPage() {
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
+
+  const { cargarDefensasInterna, cargarDefensasExternas, refreshAllDefensas } =
+    useDefensasStore();
+
+  useEffect(() => {
+    cargarDefensasInterna(1, 1000, "Examen de grado Interna", "");
+    cargarDefensasExternas(1, 1000, "Examen de grado Externa", "");
+  }, [cargarDefensasInterna, cargarDefensasExternas]);
 
   const actions = {
     ExamendeGrado: [
@@ -83,6 +92,12 @@ export default function EstudiantesPage() {
         estudianteIds={selected}
         triggerLabel="Asignar Defensa"
         onSubmit={(data) => console.log(data)}
+        onSuccess={async () => {
+          await Promise.all([
+            cargarEstudiantes(page, pageSize, searchTerm),
+            refreshAllDefensas(),
+          ]);
+        }}
         disabled={selected.length <= 1}
       />,
     ],
@@ -102,14 +117,30 @@ export default function EstudiantesPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3"></th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombres Completo</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Celular</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Carrera</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Defensa Interna</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Defensa Externa</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  #
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nombres Completo
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Correo
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Celular
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Carrera
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Defensa Interna
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Defensa Externa
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
 

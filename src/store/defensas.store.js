@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { fetchDefensas,asignarJuradosLote,fetchJurados, agregarNotaDefensa,  
   agregarAulaDefensa, actualizarJurados } from "@/services/defensas.services";
-export const useDefensasStore = create((set) => ({
+export const useDefensasStore = create((set,get) => ({
   defensasInterna: [],
   defensasExternas:[],
   jurados: [],  
@@ -11,6 +11,24 @@ export const useDefensasStore = create((set) => ({
   loading: false,
   error: null,
   tipoDefensa: "",
+   selectDefensasDeEstudiante: (estudianteId) => {
+    const { defensasInterna, defensasExternas } = get();
+    const mapTipo = (items, tipoLabel) =>
+      (items || [])
+        .filter(d => Number(d.id_estudiante) === Number(estudianteId))
+        .map(d => ({ ...d, tipo: tipoLabel }));
+    return [
+      ...mapTipo(defensasInterna, "Examen de grado Interna"),
+      ...mapTipo(defensasExternas, "Examen de grado Externa"),
+    ];
+  },
+    refreshAllDefensas: async () => {
+    const { cargarDefensasInterna, cargarDefensasExternas } = get();
+    await Promise.all([
+      cargarDefensasInterna(1, 10, "Examen de grado Interna"),
+      cargarDefensasExternas(1, 10, "Examen de grado Externa"),
+    ]);
+  },
   cargarDefensasInterna: async (page, pageSize, tipoDefensa, word = '') => {
     set({ loading: true, error: null });
     try {

@@ -1,7 +1,7 @@
 import React from "react";
 import { Checkbox } from "primereact/checkbox";
 import DefensaCellTipo from "./DefensaCellTipo";
-
+import { useDefensasStore } from "@/store/defensas.store";
 export default function StudentRow({
   student,
   selected,
@@ -14,7 +14,8 @@ export default function StudentRow({
   onAskDelete,
 }) {
   const checked = selected.includes(student.id_estudiante);
-
+  const { selectDefensasDeEstudiante } = useDefensasStore();
+  const defensasEst = selectDefensasDeEstudiante(student.id_estudiante);
   return (
     <tr className="border-b last:border-none hover:bg-gray-50">
       <td className="px-4 py-3">
@@ -24,7 +25,9 @@ export default function StudentRow({
           onChange={() => onToggle(student.id_estudiante)}
         />
       </td>
-      <td className="px-4 py-3 text-sm text-gray-700">{student.id_estudiante}</td>
+      <td className="px-4 py-3 text-sm text-gray-700">
+        {student.id_estudiante}
+      </td>
       <td className="px-4 py-3 text-sm text-gray-700">
         {student.nombre}, {student.apellido1}
       </td>
@@ -35,9 +38,9 @@ export default function StudentRow({
       <td className="px-4 py-3">
         <DefensaCellTipo
           tipo="Examen de grado Interna"
-          defensas={student.defensas}
           estudianteId={student.id_estudiante}
           cargarEstudiantes={cargarEstudiantes}
+          defensas={defensasEst}  
           page={page}
           pageSize={pageSize}
         />
