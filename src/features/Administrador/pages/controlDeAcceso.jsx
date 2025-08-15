@@ -1,4 +1,3 @@
-// src/features/Administrador/pages/AccessControlPage.jsx
 import React, { useRef, useState } from "react";
 import ManagementLayout from "@/components/administradorContenido";
 import RegistrarUsuarios from "@/features/Administrador/components/controlDeAcceso/modal-controlAcceso";

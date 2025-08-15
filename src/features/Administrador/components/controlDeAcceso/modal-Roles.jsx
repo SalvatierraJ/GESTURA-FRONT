@@ -23,7 +23,14 @@ export default function ModalRolCascada({
   const toast = useRef(null);
   const isEstudiante = roleName.trim().toLowerCase() === "estudiante";
   const isEdit = !!initialData;
-  const { modulos, permisos, cargarModulos, cargarPermisos } = useRolStore();
+  const {
+    modulos,
+    permisos,
+    cargarModulos,
+    cargarPermisos,
+    crearNuevoRol,
+    actualizarRolExistente,
+  } = useRolStore();
 
   useEffect(() => {
     cargarModulos();
@@ -119,7 +126,7 @@ export default function ModalRolCascada({
       toast.current?.show({
         severity: "warn",
         summary: "Formulario incompleto",
-        detail: "Debes completar todos los campos obligatorios.",
+        detail: "Debes completar nombre y seleccionar al menos un permiso.",
         life: 3000,
       });
       return;
@@ -127,41 +134,46 @@ export default function ModalRolCascada({
 
     const modulosPermisos = Object.entries(modPermisos).map(
       ([modKey, perms]) => ({
-        idModulo: parseInt(modKey),
-        permisos: perms,
+        idModulo: Number(modKey),
+        permisos: (perms || []).map((p) => Number(p)),
       })
     );
 
     const payload = {
-      nombre: roleName,
+      nombre: roleName.trim(),
       modulosPermisos,
-      esTotal: controlTotal,
-      ...(initialData?.id && { id: initialData.id }),
+      esTotal: Boolean(controlTotal),
+      ...(isEdit && initialData?.id ? { id: initialData.id } : {}),
     };
 
     setSaving(true);
     try {
-      if (onSave) await onSave(payload);
-      if (onSuccess) onSuccess();
+      if (isEdit) {
+        await actualizarRolExistente(payload);
+      } else {
+        await crearNuevoRol(payload);
+      }
 
       toast.current?.show({
         severity: "success",
         summary: "Rol guardado",
         detail: "El rol fue guardado correctamente.",
-        life: 3000,
+        life: 2500,
       });
 
-      onClose?.();
+      onSuccess && onSuccess();
+      onClose && onClose();
+
+      // Reset
       setRoleName("");
       setModPermisos({});
-      setSelectedCarreras([]);
       setControlTotal(false);
     } catch (error) {
       toast.current?.show({
         severity: "error",
         summary: "Error",
-        detail: "Ocurrió un error al guardar el rol.",
-        life: 3000,
+        detail: error?.message || "Ocurrió un error al guardar el rol.",
+        life: 3500,
       });
     } finally {
       setSaving(false);
@@ -239,7 +251,9 @@ export default function ModalRolCascada({
                               <Checkbox
                                 checked={(() => {
                                   const modId = parseInt(mod.Id_Modulo);
-                                  const permisoId = parseInt(permiso.Id_Permiso);
+                                  const permisoId = parseInt(
+                                    permiso.Id_Permiso
+                                  );
                                   const result =
                                     modPermisos[modId]?.includes(permisoId);
                                   return result || false;
