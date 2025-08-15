@@ -118,6 +118,7 @@ const MainContent = () => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [toDelete, setToDelete] = useState({ id: null, name: "" });
   const [selected, setSelected] = useState([]);
+  const [areaSelected, setAreaSelected] = useState("");
   const [activeTab, setActiveTab] = useState("Interna");
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
@@ -202,18 +203,28 @@ const MainContent = () => {
     setPage(event.page + 1);
     setPageSize(event.rows);
   };
+
   const toggleSelect = (
     id_defensa,
     tienejurados,
     juradosarray,
     editar = false
   ) => {
-    // Resetear estados antes de cada operación
     setTieneJurados(false);
     setJuradosrray({});
     setSelected([]);
 
+    // Buscar defensa actual
+    const defensaActual =
+      activeTab === "Interna"
+        ? filteredDefensa.find((d) => d.id_defensa === id_defensa)
+        : filteredDefensaExterna.find((d) => d.id_defensa === id_defensa);
+
+    // Guardar área seleccionada
+    setAreaSelected(defensaActual?.area || "");
+
     setTituloModal(editar ? "Editar Jurados" : "Asignar Jurados");
+
     if (!editar) {
       setSelected((prev) => {
         const newSelected = prev.includes(id_defensa)
@@ -226,7 +237,6 @@ const MainContent = () => {
               : filteredDefensaExterna.find((d) => d.id_defensa === id);
           return defensa?.jurados && defensa.jurados.length > 0;
         });
-        // Construir objeto con todos los jurados de las defensas seleccionadas
         const juradosCompletos = {};
         newSelected.forEach((id) => {
           const defensa =
@@ -239,30 +249,25 @@ const MainContent = () => {
         });
         setTieneJurados(hayJurados);
         setJuradosrray(juradosCompletos);
-
         return newSelected;
       });
     } else {
       setSelected([id_defensa]);
-
       const juradosCompletos = {};
       if (juradosarray && juradosarray.length > 0) {
         juradosCompletos[id_defensa] = juradosarray;
       }
-
       setTieneJurados(tienejurados);
       setJuradosrray(juradosCompletos);
-
       setTimeout(() => {
         let botonModal = document.querySelector(
           '[aria-label="Asignar Jurados"]'
         );
-
-        console.log(botonModal);
-        botonModal.click();
+        botonModal?.click();
       }, 100);
     }
   };
+
   useEffect(() => {
     const debounceCargarDatos = debounce(() => {
       if (activeTab === "Interna") {
@@ -318,6 +323,7 @@ const MainContent = () => {
         setTieneJurados(false);
         setJuradosrray({});
       }}
+      areaNombre={areaSelected} 
       Jurados={juradosrray}
       TituloModal={tituloModal}
     />,
