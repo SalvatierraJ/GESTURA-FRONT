@@ -70,7 +70,6 @@ export default function ModalAsignarDefensaSorteo({
         estudianteIds,
         tipoDefensa: tipo,
       });
-      await refreshAllDefensas();
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       setResultados(data);
       setLoading(false);
@@ -182,9 +181,10 @@ export default function ModalAsignarDefensaSorteo({
             <Button
               label="Cerrar"
               className="mt-2 bg-[#e11d1d] text-white font-bold border-none"
-              onClick={() => {
+              onClick={async () => {
+                await refreshAllDefensas();
+                onSuccess && onSuccess(resultados);
                 setVisible(false);
-                onSuccess && onSuccess();
               }}
             />
           </div>
