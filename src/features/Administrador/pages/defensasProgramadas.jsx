@@ -10,13 +10,14 @@ import { Paginator } from "primereact/paginator";
 import InputBuscar from "@/components/searchInput";
 import ArchivoDefensa from "@/features/Administrador/components/defensasProgramadas/descargarCasoEstudio";
 import debounce from "lodash.debounce";
+import ConfirmDeleteModal from "@/features/Administrador/components/common/ConfirmDeleteModal";
 
 const truncarTexto = (texto, maxLength = 30) => {
   return texto.length > maxLength
     ? `${texto.substring(0, maxLength)}...`
     : texto;
 };
-const DefenseRow = ({ student, selected, onToggle }) => {
+const DefenseRow = ({ student, selected, onToggle, onAskDelete }) => {
   const tieneJurados = student.jurados && student.jurados.length > 0;
   const checked = selected.includes(student.id_defensa);
 
@@ -24,11 +25,14 @@ const DefenseRow = ({ student, selected, onToggle }) => {
     <tr className="border-b last:border-none hover:bg-gray-50">
       <td className="px-4 py-3">
         {!tieneJurados && (
-        <Checkbox
-          inputId={`chk-${student.id_defensa}`}
-          checked={checked}
-          onChange={() => onToggle(student.id_defensa, tieneJurados, student.jurados)} 
-        /> )}
+          <Checkbox
+            inputId={`chk-${student.id_defensa}`}
+            checked={checked}
+            onChange={() =>
+              onToggle(student.id_defensa, tieneJurados, student.jurados)
+            }
+          />
+        )}
       </td>
       <td className="px-4 py-3 text-sm text-gray-700">{student.id_defensa}</td>
       <td className="px-4 py-3 text-sm text-gray-700">{student.estudiante}</td>
@@ -52,13 +56,21 @@ const DefenseRow = ({ student, selected, onToggle }) => {
           <span className="italic text-gray-400">Sin jurados</span>
         )}
         {tieneJurados && (
-  <Button
-    icon="pi pi-pencil"
-    className="p-button-sm p-button-text"
-    onClick={() =>  onToggle(student.id_defensa, tieneJurados, student.jurados, true, "Editar jurados")}
-    tooltip="Editar jurados"
-  />
-)}
+          <Button
+            icon="pi pi-pencil"
+            className="p-button-sm p-button-text"
+            onClick={() =>
+              onToggle(
+                student.id_defensa,
+                tieneJurados,
+                student.jurados,
+                true,
+                "Editar jurados"
+              )
+            }
+            tooltip="Editar jurados"
+          />
+        )}
       </td>
       <td className="px-4 py-3">
         {student.estado === "ASIGNADO" && (
@@ -76,11 +88,35 @@ const DefenseRow = ({ student, selected, onToggle }) => {
         {student.nota ? student.nota : "Sin Nota"}
         <AddNota id_defensa={student.id_defensa} notaActual={student.nota} />
       </td>
+
+      <td className="px-4 py-3 text-center">
+        <button
+          className={`text-red-600 hover:text-white hover:bg-red-700 rounded p-1 ${
+            tieneJurados ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          title={
+            tieneJurados
+              ? "No puede eliminar: tiene jurados asignados"
+              : "Eliminar defensa"
+          }
+          disabled={tieneJurados}
+          onClick={() =>
+            onAskDelete(
+              `Defensa #${student.id_defensa} de ${student.estudiante}`,
+              student.id_defensa
+            )
+          }
+        >
+          <i className="fas fa-trash" />
+        </button>
+      </td>
     </tr>
   );
 };
 
 const MainContent = () => {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [toDelete, setToDelete] = useState({ id: null, name: "" });
   const [selected, setSelected] = useState([]);
   const [activeTab, setActiveTab] = useState("Interna");
   const [searchTerm, setSearchTerm] = useState("");
@@ -98,7 +134,47 @@ const MainContent = () => {
     error,
     cargarDefensasInterna,
     cargarDefensasExternas,
+    borrarDefensa,
   } = useDefensasStore();
+
+  const onAskDelete = (name, id) => {
+    setToDelete({ id, name });
+    setConfirmOpen(true);
+  };
+
+  const onConfirmDelete = async () => {
+    if (!toDelete.id) return;
+    try {
+      await borrarDefensa(toDelete.id);
+
+      if (activeTab === "Interna") {
+        await cargarDefensasInterna(
+          page,
+          pageSize,
+          "Examen de grado Interna",
+          searchTerm
+        );
+      } else {
+        await cargarDefensasExternas(
+          page,
+          pageSize,
+          "Examen de grado Externa",
+          searchTerm
+        );
+      }
+
+      setSelected((prev) => prev.filter((x) => x !== toDelete.id));
+    } finally {
+      setConfirmOpen(false);
+      setToDelete({ id: null, name: "" });
+    }
+  };
+
+  const closeConfirm = () => {
+    setConfirmOpen(false);
+    setToDelete({ id: null, name: "" });
+  };
+
   useEffect(() => {
     if (activeTab === "Interna")
       cargarDefensasInterna(page, pageSize, "Examen de grado Interna");
@@ -126,36 +202,43 @@ const MainContent = () => {
     setPage(event.page + 1);
     setPageSize(event.rows);
   };
-  const toggleSelect = (id_defensa, tienejurados, juradosarray, editar = false ) => {
+  const toggleSelect = (
+    id_defensa,
+    tienejurados,
+    juradosarray,
+    editar = false
+  ) => {
     // Resetear estados antes de cada operación
     setTieneJurados(false);
     setJuradosrray({});
     setSelected([]);
-    
-    setTituloModal(editar ? "Editar Jurados":  "Asignar Jurados");
-    if(!editar){
-    setSelected((prev) => {
-      const newSelected = prev.includes(id_defensa)
-        ? prev.filter((x) => x !== id_defensa)
-        : [...prev, id_defensa];
-      const hayJurados = newSelected.some(id => {
-      const defensa = activeTab === "Interna"
-        ? filteredDefensa.find(d => d.id_defensa === id)
-        : filteredDefensaExterna.find(d => d.id_defensa === id);
-      return defensa?.jurados && defensa.jurados.length > 0;
-    });
-    // Construir objeto con todos los jurados de las defensas seleccionadas
-    const juradosCompletos = {};
-    newSelected.forEach(id => {
-      const defensa = activeTab === "Interna"
-        ? filteredDefensa.find(d => d.id_defensa === id)
-        : filteredDefensaExterna.find(d => d.id_defensa === id);
-      if (defensa?.jurados) {
-        juradosCompletos[id] = defensa.jurados;
-      }
-    });
-     setTieneJurados(hayJurados);
-     setJuradosrray(juradosCompletos);
+
+    setTituloModal(editar ? "Editar Jurados" : "Asignar Jurados");
+    if (!editar) {
+      setSelected((prev) => {
+        const newSelected = prev.includes(id_defensa)
+          ? prev.filter((x) => x !== id_defensa)
+          : [...prev, id_defensa];
+        const hayJurados = newSelected.some((id) => {
+          const defensa =
+            activeTab === "Interna"
+              ? filteredDefensa.find((d) => d.id_defensa === id)
+              : filteredDefensaExterna.find((d) => d.id_defensa === id);
+          return defensa?.jurados && defensa.jurados.length > 0;
+        });
+        // Construir objeto con todos los jurados de las defensas seleccionadas
+        const juradosCompletos = {};
+        newSelected.forEach((id) => {
+          const defensa =
+            activeTab === "Interna"
+              ? filteredDefensa.find((d) => d.id_defensa === id)
+              : filteredDefensaExterna.find((d) => d.id_defensa === id);
+          if (defensa?.jurados) {
+            juradosCompletos[id] = defensa.jurados;
+          }
+        });
+        setTieneJurados(hayJurados);
+        setJuradosrray(juradosCompletos);
 
         return newSelected;
       });
@@ -171,25 +254,43 @@ const MainContent = () => {
       setJuradosrray(juradosCompletos);
 
       setTimeout(() => {
-        let botonModal =  document.querySelector('[aria-label="Asignar Jurados"]');
-      
-          console.log(botonModal);
-          botonModal.click();
+        let botonModal = document.querySelector(
+          '[aria-label="Asignar Jurados"]'
+        );
+
+        console.log(botonModal);
+        botonModal.click();
       }, 100);
     }
   };
-  useEffect(()=>{
-     const debounceCargarDatos = debounce(() => {
-    if (activeTab === "Interna") {
-      cargarDefensasInterna(page, pageSize, "Examen de grado Interna", searchTerm); } 
-    else if (activeTab === "Externa")
-{
-      cargarDefensasExternas(page, pageSize, "Examen de grado Externa", searchTerm); } 
-}, 500);
-debounceCargarDatos();
-  return () => debounceCargarDatos.cancel();
-
-  }, [searchTerm, activeTab, pageSize, page, cargarDefensasInterna, cargarDefensasExternas]);
+  useEffect(() => {
+    const debounceCargarDatos = debounce(() => {
+      if (activeTab === "Interna") {
+        cargarDefensasInterna(
+          page,
+          pageSize,
+          "Examen de grado Interna",
+          searchTerm
+        );
+      } else if (activeTab === "Externa") {
+        cargarDefensasExternas(
+          page,
+          pageSize,
+          "Examen de grado Externa",
+          searchTerm
+        );
+      }
+    }, 500);
+    debounceCargarDatos();
+    return () => debounceCargarDatos.cancel();
+  }, [
+    searchTerm,
+    activeTab,
+    pageSize,
+    page,
+    cargarDefensasInterna,
+    cargarDefensasExternas,
+  ]);
 
   const actions = [
     <InputBuscar
@@ -276,6 +377,9 @@ debounceCargarDatos();
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Nota Final
                 </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -287,6 +391,7 @@ debounceCargarDatos();
                   onToggle={toggleSelect}
                   AddAula={AddAula}
                   SetTieneJurados={setTieneJurados}
+                  onAskDelete={onAskDelete}
                 />
               ))}
             </tbody>
@@ -346,6 +451,7 @@ debounceCargarDatos();
                   selected={selected}
                   onToggle={toggleSelect}
                   AddAula={AddAula}
+                  onAskDelete={onAskDelete}
                 />
               ))}
             </tbody>
@@ -362,6 +468,14 @@ debounceCargarDatos();
           </div>
         </>
       )}
+
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        name={toDelete.name}
+        entityLabel="defensa"
+        onClose={closeConfirm}
+        onConfirm={onConfirmDelete}
+      />
     </ManagementLayout>
   );
 };
