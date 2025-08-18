@@ -70,6 +70,7 @@ export default function DocentesPage() {
       </button>,
     ],
   };
+  
 
   return (
     <ManagementLayout
