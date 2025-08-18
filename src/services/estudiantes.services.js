@@ -43,7 +43,7 @@ export async function generarDefensa(params) {
 }
 
 export async function updateEstadoOBorradoEstudiante(id, payload) {
-  return apiFetch(`/student-managament/estudiantes/${id}/estado-o-borrado`, {
+  return apiFetch(`/student-managament/estudiante/${id}/estado-o-borrado`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
