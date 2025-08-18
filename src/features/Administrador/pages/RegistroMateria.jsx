@@ -12,7 +12,6 @@ import { usePensumStore } from "../../../store/materia.store";
 import { Dropdown } from "primereact/dropdown";
 import ModalEditPrereqEquiv from "../components/pensum/modalPreReq";
 import { Button } from "primereact/button";
-import SimuladorAperturaMaterias from "@/features/Administrador/pages/simulador";
 import Simulador from "@/features/Administrador/components/pensum/SimuladorAperturaMaterias";
 const SidebarContent = memo(
   ({
