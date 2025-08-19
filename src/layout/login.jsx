@@ -87,10 +87,7 @@ const LoginForm = () => {
       }
     };
     doLoginOauth();
-    // Evita recarga automática en el redirect OAuth
-    if (window.history && window.location.search.includes("code=")) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
+ 
   }, [isAuthenticated]);
 
   useEffect(() => {
