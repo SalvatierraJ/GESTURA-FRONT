@@ -87,7 +87,6 @@ const LoginForm = () => {
       }
     };
     doLoginOauth();
- 
   }, [isAuthenticated]);
 
   useEffect(() => {
@@ -112,11 +111,11 @@ const LoginForm = () => {
     console.log("Expected redirect:", REDIRECT_URI);
     console.log("===================================");
     loginWithRedirect({
-      connection: "AzureADv2",
-      redirect_uri: REDIRECT_URI,
-      audience: import.meta.env.VITE_AUTH0_AUDIENCE,
       authorizationParams: {
         prompt: "login",
+        connection: "AzureADv2",
+        redirect_uri: REDIRECT_URI,
+        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
       },
     });
   };
