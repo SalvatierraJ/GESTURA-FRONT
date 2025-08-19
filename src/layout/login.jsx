@@ -118,6 +118,9 @@ const LoginForm = () => {
       connection: "AzureADv2",
       redirect_uri: REDIRECT_URI,
       audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+      authorizationParams: {
+        prompt: "login",
+      },
     });
   };
 
