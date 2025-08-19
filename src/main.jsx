@@ -1,17 +1,17 @@
-// main.tsx
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, useNavigate } from "react-router-dom";
+import "@/index.css";
 import { Auth0Provider } from "@auth0/auth0-react";
 import App from "@/App.jsx";
-import "@/index.css";
+import "primereact/resources/themes/lara-light-cyan/theme.css";
+import "primeicons/primeicons.css";
 
 const domain = import.meta.env.VITE_AUTH0_DOMAIN;
 const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
 const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
 const redirectUri = (import.meta.env.VITE_REDIRECT_URI || window.location.origin);
 
-// Wrapper recomendado por Auth0 para usar navigate en onRedirectCallback
 function Auth0ProviderWithNavigate({ children }) {
   const navigate = useNavigate();
   return (
@@ -19,11 +19,11 @@ function Auth0ProviderWithNavigate({ children }) {
       domain={domain}
       clientId={clientId}
       authorizationParams={{
-        redirect_uri: redirectUri,              // Debe coincidir EXACTO con Callback URL
-        audience: audience,                     // Para obtener access token de tu API
+        redirect_uri: redirectUri,
+        audience: audience,
         scope: "openid profile email",
       }}
-      cacheLocation="localstorage"              // Estabiliza PKCE/silent auth
+      cacheLocation="localstorage"       
       onRedirectCallback={(appState) => {
         navigate(appState?.returnTo || "/", { replace: true });
       }}
