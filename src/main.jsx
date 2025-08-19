@@ -12,6 +12,15 @@ const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID;
 const audience = import.meta.env.VITE_AUTH0_AUDIENCE;
 const redirectUri = import.meta.env.VITE_REDIRECT_URI || window.location.origin;
 
+// Debug de configuración OAuth
+console.log('=== CONFIGURACIÓN OAUTH ===');
+console.log('Domain:', domain);
+console.log('Client ID:', clientId);
+console.log('Audience:', audience);
+console.log('Redirect URI:', redirectUri);
+console.log('Current Origin:', window.location.origin);
+console.log('===========================');
+
 const root = createRoot(document.getElementById("root"));
 root.render(
   <StrictMode>

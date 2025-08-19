@@ -75,9 +75,16 @@ const LoginForm = () => {
 
     doLoginOauth();
   }, [isAuthenticated]);
+  
   const handleMicrosoftLogin = () => {
+    console.log('=== INICIANDO LOGIN MICROSOFT ===');
+    console.log('Current URL:', window.location.href);
+    console.log('Expected redirect:', import.meta.env.VITE_REDIRECT_URI || window.location.origin);
+    console.log('===================================');
+    
     loginWithRedirect({
       connection: "AzureADv2",
+      redirectUri: import.meta.env.VITE_REDIRECT_URI || window.location.origin,
     });
   };
 
