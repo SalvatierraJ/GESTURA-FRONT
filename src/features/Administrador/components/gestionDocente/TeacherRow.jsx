@@ -1,5 +1,5 @@
 import React from "react";
-import Horario from "@/features/Administrador/components/modal-horario";
+import Horario from "@/features/Administrador/components/gestionDocente/modal-horario";
 import TogglePill from "@/features/Administrador/components/common/TogglePill";
 
 export default function TeacherRow({
@@ -48,7 +48,10 @@ export default function TeacherRow({
         >
           <i className="fas fa-trash"></i>
         </button>
-        <Horario />
+        <Horario
+          materiasHorarios={docente.materias_horarios}
+          docenteNombre={docente.Nombre}
+        />
       </td>
     </tr>
   );

@@ -113,6 +113,19 @@ export function useAsignacionMateriaDocente() {
 
   const materias = materiasHistorial || [];
 
+  // Inicializar asignaciones locales con los datos del backend
+  useEffect(() => {
+    if (materias && materias.length > 0) {
+      const asignacionesIniciales = {};
+      materias.forEach(materia => {
+        if (materia.id_docente) {
+          asignacionesIniciales[materia.id] = Number(materia.id_docente);
+        }
+      });
+      setAsignaciones(prev => ({ ...asignacionesIniciales, ...prev }));
+    }
+  }, [materias]);
+
   const materiaById = useMemo(() => {
     const m = new Map();
     materias.forEach((x) => m.set(parseInt(x.id), x));
@@ -310,6 +323,9 @@ export function useAsignacionMateriaDocente() {
     }
     try {
       await guardarAsignacion(materia.id, Number(seleccionado));
+      
+      await cargarHistorialDocenteMaterias();
+      
       setAvisos((prev) => ({
         ...prev,
         [materia.id]: "Asignado correctamente.",
@@ -325,6 +341,10 @@ export function useAsignacionMateriaDocente() {
   async function onDesasignarClick(materia) {
     try {
       await desasignarDocente(materia.id);
+      
+      // Recargar los datos después de desasignar
+      await cargarHistorialDocenteMaterias();
+      
       setAvisos((prev) => ({ ...prev, [materia.id]: "Desasignado." }));
       setAsignaciones((prev) => {
         const next = { ...prev };

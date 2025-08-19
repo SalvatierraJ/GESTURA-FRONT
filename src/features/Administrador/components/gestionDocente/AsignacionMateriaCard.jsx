@@ -15,7 +15,7 @@ export function SimuladorMateriaCard({
   docenteSeleccionadoId,
   hayConflictoSeleccion,
   filtros,
-  opcionesDocentes,
+  buildDocenteOptionsParaMateria,
   prev1,
   prev2,
   DOCENTES,
@@ -37,6 +37,8 @@ export function SimuladorMateriaCard({
   colorBlack,
   colorWhite,
 }) {
+  const opcionesDocentes = buildDocenteOptionsParaMateria(materia);
+  
   return (
     <Card
       key={materia.id}

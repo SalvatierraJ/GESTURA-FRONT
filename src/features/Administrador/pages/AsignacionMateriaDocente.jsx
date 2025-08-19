@@ -114,7 +114,6 @@ export default function AsignarDocentesMaterias() {
                   materiaById
                 );
               const filtros = getFiltros(String(materia.id));
-              const opcionesDocentes = buildDocenteOptionsParaMateria(materia);
               return (
                 <div style={{ ...style, padding: "0 0 2px 0" }} key={materia.id}>
                   <SimuladorMateriaCard
@@ -128,7 +127,7 @@ export default function AsignarDocentesMaterias() {
                     docenteSeleccionadoId={docenteSeleccionadoId}
                     hayConflictoSeleccion={hayConflictoSeleccion}
                     filtros={filtros}
-                    opcionesDocentes={opcionesDocentes}
+                    buildDocenteOptionsParaMateria={buildDocenteOptionsParaMateria}
                     prev1={prev1}
                     prev2={prev2}
                     DOCENTES={DOCENTES}
