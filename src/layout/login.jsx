@@ -8,6 +8,7 @@ import { login, fetchProfile } from "@/services/auth";
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import ErrorModal from "@/components/errorModal";
+const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI?.replace(/\/$/, '') || window.location.origin;
 const LoginForm = () => {
   const {
     loginWithRedirect,
@@ -72,9 +73,13 @@ const LoginForm = () => {
         }
       }
     };
-
     doLoginOauth();
+    // Evita recarga automática en el redirect OAuth
+    if (window.history && window.location.search.includes('code=')) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
   }, [isAuthenticated]);
+
   useEffect(() => {
     if (window.location.search.includes('error')) {
       const params = new URLSearchParams(window.location.search);
@@ -85,12 +90,11 @@ const LoginForm = () => {
   const handleMicrosoftLogin = () => {
     console.log('=== INICIANDO LOGIN MICROSOFT ===');
     console.log('Current URL:', window.location.href);
-    console.log('Expected redirect:', import.meta.env.VITE_REDIRECT_URI || window.location.origin);
+    console.log('Expected redirect:', REDIRECT_URI);
     console.log('===================================');
-    
     loginWithRedirect({
       connection: "AzureADv2",
-      redirectUri: import.meta.env.VITE_REDIRECT_URI || window.location.origin,
+      redirectUri: REDIRECT_URI,
       audience: import.meta.env.VITE_AUTH0_AUDIENCE,
     });
   };
