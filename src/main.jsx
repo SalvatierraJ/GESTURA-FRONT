@@ -29,6 +29,7 @@ root.render(
       clientId={clientId}
       authorizationParams={{
         redirect_uri: redirectUri,
+        audience: audience,
         scope: "openid profile email",
       }}
       useRefreshTokens={true}
