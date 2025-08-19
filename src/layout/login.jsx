@@ -8,7 +8,9 @@ import { login, fetchProfile } from "@/services/auth";
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import ErrorModal from "@/components/errorModal";
-const REDIRECT_URI = import.meta.env.VITE_REDIRECT_URI?.replace(/\/$/, '') || window.location.origin;
+const REDIRECT_URI =
+  import.meta.env.VITE_REDIRECT_URI?.replace(/\/$/, "") ||
+  window.location.origin;
 const LoginForm = () => {
   const {
     loginWithRedirect,
@@ -27,27 +29,38 @@ const LoginForm = () => {
       if (isAuthenticated) {
         setSocialLoading(true);
         try {
-          console.log('Iniciando OAuth flow...');
-          
-          const access_token = await getAccessTokenSilently();
-          console.log('Access token obtenido:', access_token ? 'Sí' : 'No');
-          
+          console.log("Iniciando OAuth flow...");
+
+          const access_token = await getAccessTokenSilently({
+            authorizationParams: {
+              audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+              scope: "openid profile email",
+            },
+          });
+          console.log("Access token obtenido:", access_token ? "Sí" : "No");
+
           const id_token_claims = await getIdTokenClaims();
           const id_token = id_token_claims?.__raw;
-          console.log('ID token obtenido:', id_token ? 'Sí' : 'No');
-          
+          console.log("ID token obtenido:", id_token ? "Sí" : "No");
+
           if (!id_token || !access_token) {
-            console.error('Tokens faltantes:', { id_token: !!id_token, access_token: !!access_token });
+            console.error("Tokens faltantes:", {
+              id_token: !!id_token,
+              access_token: !!access_token,
+            });
             setSocialLoading(false);
             setErrorModal(true);
             return;
           }
 
-          console.log('Enviando tokens al backend...');
-          const { success, error } = await loginWithOauth({ id_token, access_token });
-          
+          console.log("Enviando tokens al backend...");
+          const { success, error } = await loginWithOauth({
+            id_token,
+            access_token,
+          });
+
           if (success) {
-            console.log('Login OAuth exitoso');
+            console.log("Login OAuth exitoso");
             const userProfile = await fetchProfile();
             setAuth(userProfile, access_token);
 
@@ -62,12 +75,12 @@ const LoginForm = () => {
               navigate("/home");
             }
           } else {
-            console.error('Error en login OAuth:', error);
+            console.error("Error en login OAuth:", error);
             setSocialLoading(false);
             setErrorModal(true);
           }
         } catch (error) {
-          console.error('Error en doLoginOauth:', error);
+          console.error("Error en doLoginOauth:", error);
           setSocialLoading(false);
           setErrorModal(true);
         }
@@ -75,26 +88,35 @@ const LoginForm = () => {
     };
     doLoginOauth();
     // Evita recarga automática en el redirect OAuth
-    if (window.history && window.location.search.includes('code=')) {
+    if (window.history && window.location.search.includes("code=")) {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (window.location.search.includes('error')) {
+    if (window.location.search.includes("error")) {
       const params = new URLSearchParams(window.location.search);
-      console.error('OAuth error:', params.get('error'), params.get('error_description'));
-      alert('OAuth error: ' + params.get('error') + ' - ' + params.get('error_description'));
+      console.error(
+        "OAuth error:",
+        params.get("error"),
+        params.get("error_description")
+      );
+      alert(
+        "OAuth error: " +
+          params.get("error") +
+          " - " +
+          params.get("error_description")
+      );
     }
-  }, []);  
+  }, []);
   const handleMicrosoftLogin = () => {
-    console.log('=== INICIANDO LOGIN MICROSOFT ===');
-    console.log('Current URL:', window.location.href);
-    console.log('Expected redirect:', REDIRECT_URI);
-    console.log('===================================');
+    console.log("=== INICIANDO LOGIN MICROSOFT ===");
+    console.log("Current URL:", window.location.href);
+    console.log("Expected redirect:", REDIRECT_URI);
+    console.log("===================================");
     loginWithRedirect({
       connection: "AzureADv2",
-      redirectUri: REDIRECT_URI,
+      redirect_uri: REDIRECT_URI,
       audience: import.meta.env.VITE_AUTH0_AUDIENCE,
     });
   };
