@@ -25,25 +25,49 @@ const LoginForm = () => {
     const doLoginOauth = async () => {
       if (isAuthenticated) {
         setSocialLoading(true);
-        const access_token = await getAccessTokenSilently();
-        const id_token_claims = await getIdTokenClaims();
-        const id_token = id_token_claims.__raw;
-        const { success } = await loginWithOauth({ id_token, access_token });
-        if (success) {
-          const userProfile = await fetchProfile();
-          setAuth(userProfile, access_token);
-
-          const roles =
-            userProfile.roles?.map((r) =>
-              (r.Nombre || "").trim().toLowerCase()
-            ) || [];
-          setSocialLoading(false);
-          if (roles.length === 1 && roles[0] === "estudiante") {
-            navigate("/estudiante");
-          } else {
-            navigate("/home");
+        try {
+          console.log('Iniciando OAuth flow...');
+          
+          const access_token = await getAccessTokenSilently();
+          console.log('Access token obtenido:', access_token ? 'Sí' : 'No');
+          
+          const id_token_claims = await getIdTokenClaims();
+          const id_token = id_token_claims?.__raw;
+          console.log('ID token obtenido:', id_token ? 'Sí' : 'No');
+          
+          if (!id_token || !access_token) {
+            console.error('Tokens faltantes:', { id_token: !!id_token, access_token: !!access_token });
+            setSocialLoading(false);
+            setErrorModal(true);
+            return;
           }
-        } else {
+
+          console.log('Enviando tokens al backend...');
+          const { success, error } = await loginWithOauth({ id_token, access_token });
+          
+          if (success) {
+            console.log('Login OAuth exitoso');
+            const userProfile = await fetchProfile();
+            setAuth(userProfile, access_token);
+
+            const roles =
+              userProfile.roles?.map((r) =>
+                (r.Nombre || "").trim().toLowerCase()
+              ) || [];
+            setSocialLoading(false);
+            if (roles.length === 1 && roles[0] === "estudiante") {
+              navigate("/estudiante");
+            } else {
+              navigate("/home");
+            }
+          } else {
+            console.error('Error en login OAuth:', error);
+            setSocialLoading(false);
+            setErrorModal(true);
+          }
+        } catch (error) {
+          console.error('Error en doLoginOauth:', error);
+          setSocialLoading(false);
           setErrorModal(true);
         }
       }
