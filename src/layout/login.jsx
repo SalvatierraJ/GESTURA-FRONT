@@ -75,7 +75,13 @@ const LoginForm = () => {
 
     doLoginOauth();
   }, [isAuthenticated]);
-  
+  useEffect(() => {
+    if (window.location.search.includes('error')) {
+      const params = new URLSearchParams(window.location.search);
+      console.error('OAuth error:', params.get('error'), params.get('error_description'));
+      alert('OAuth error: ' + params.get('error') + ' - ' + params.get('error_description'));
+    }
+  }, []);  
   const handleMicrosoftLogin = () => {
     console.log('=== INICIANDO LOGIN MICROSOFT ===');
     console.log('Current URL:', window.location.href);
