@@ -23,6 +23,7 @@ function Auth0ProviderWithNavigate({ children }) {
         audience: audience,
         scope: "openid profile email",
       }}
+      useRefreshTokens
       cacheLocation="localstorage"       
       onRedirectCallback={(appState) => {
         navigate(appState?.returnTo || "/", { replace: true });

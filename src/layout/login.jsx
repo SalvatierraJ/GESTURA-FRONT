@@ -9,8 +9,8 @@ import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import ErrorModal from "@/components/errorModal";
 const REDIRECT_URI =
-  import.meta.env.VITE_REDIRECT_URI?.replace(/\/$/, "") ||
-  window.location.origin;
+  import.meta.env.VITE_REDIRECT_URI || window.location.origin;
+
 const LoginForm = () => {
   const {
     loginWithRedirect,
@@ -18,76 +18,47 @@ const LoginForm = () => {
     isAuthenticated,
     user,
     getIdTokenClaims,
+    isLoading,
   } = useAuth0();
   const loginWithOauth = useAuthStore((s) => s.loginWithOauth);
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
   const [socialLoading, setSocialLoading] = useState(false);
-
+  const ranOnceRef = useRef(false);
   useEffect(() => {
-    const doLoginOauth = async () => {
-      if (isAuthenticated) {
-        setSocialLoading(true);
-        try {
-          console.log("Iniciando OAuth flow...");
+    if (isLoading || !isAuthenticated || ranOnceRef.current) return;
+    ranOnceRef.current = true;
+    (async () => {
+      try {
+        const access_token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+            scope: "openid profile email",
+          },
+        });
 
-          const access_token = await getAccessTokenSilently({
-            authorizationParams: {
-              audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-              scope: "openid profile email",
-            },
-          });
-          console.log("Access token obtenido:", access_token ? "Sí" : "No");
+        const id_token = (await getIdTokenClaims())?.__raw;
+        if (!id_token || !access_token) throw new Error("Tokens faltantes");
 
-          const id_token_claims = await getIdTokenClaims();
-          const id_token = id_token_claims?.__raw;
-          console.log("ID token obtenido:", id_token ? "Sí" : "No");
+        const { success } = await loginWithOauth({ id_token, access_token });
+        if (!success) throw new Error("Backend rechazó OAuth");
 
-          if (!id_token || !access_token) {
-            console.error("Tokens faltantes:", {
-              id_token: !!id_token,
-              access_token: !!access_token,
-            });
-            setSocialLoading(false);
-            setErrorModal(true);
-            return;
-          }
-
-          console.log("Enviando tokens al backend...");
-          const { success, error } = await loginWithOauth({
-            id_token,
-            access_token,
-          });
-
-          if (success) {
-            console.log("Login OAuth exitoso");
-            const userProfile = await fetchProfile();
-            setAuth(userProfile, access_token);
-
-            const roles =
-              userProfile.roles?.map((r) =>
-                (r.Nombre || "").trim().toLowerCase()
-              ) || [];
-            setSocialLoading(false);
-            if (roles.length === 1 && roles[0] === "estudiante") {
-              navigate("/estudiante");
-            } else {
-              navigate("/home");
-            }
-          } else {
-            console.error("Error en login OAuth:", error);
-            setSocialLoading(false);
-            setErrorModal(true);
-          }
-        } catch (error) {
-          console.error("Error en doLoginOauth:", error);
-          setSocialLoading(false);
-          setErrorModal(true);
-        }
+        const userProfile = await fetchProfile();
+        setAuth(userProfile, access_token);
+        const roles = (userProfile.roles || []).map((r) =>
+          (r.Nombre || "").trim().toLowerCase()
+        );
+        navigate(
+          roles.length === 1 && roles[0] === "estudiante"
+            ? "/estudiante"
+            : "/home"
+        );
+      } catch (e) {
+        setSocialLoading(false);
+        setErrorModal(true);
       }
-    };
-    doLoginOauth();
-  }, [isAuthenticated]);
+    })();
+  }, [isAuthenticated, isLoading]);
 
   useEffect(() => {
     if (window.location.search.includes("error")) {
@@ -114,8 +85,8 @@ const LoginForm = () => {
       authorizationParams: {
         prompt: "login",
         connection: "AzureADv2",
-        redirect_uri: REDIRECT_URI,
         audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        scope: "openid profile email",
       },
     });
   };
