@@ -1,6 +1,5 @@
 import { apiFetch } from "./api";
 export const crearRol = async (data) => {
-
   return await apiFetch(`/controlaccesomanagament/crear-Rol`, {
     method: "POST",
     body: JSON.stringify(data),
@@ -14,14 +13,22 @@ export const actualizarRol = async (data) => {
   });
 };
 
-export const eliminarRol = async (id) => {
-  return apiFetch(`/controlaccesomanagament/eliminarRol/${id}`, {
+export const softDeleteRol = async (id) => {
+  return apiFetch(`/controlaccesomanagament/eliminar/${id}`, {
     method: "DELETE",
   });
 };
 
+export const restoreRol = async (id) => {
+  return apiFetch(`/controlaccesomanagament/${id}/restaurar`, {
+    method: "PATCH",
+  });
+};
+
 export const obtenerRolesPaginados = async (pagina = 1, limite = 10) => {
-  return apiFetch(`/controlaccesomanagament/roles/?pagina=${pagina}&limite=${limite}`);
+  return apiFetch(
+    `/controlaccesomanagament/roles/?pagina=${pagina}&limite=${limite}`
+  );
 };
 
 export const obtenerPermisos = async () => {

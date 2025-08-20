@@ -40,3 +40,9 @@ export async function agregarAulaDefensa(id_defensa, aula) {
   });
   
 }
+
+export async function eliminarDefensa(id_defensa) {
+  return apiFetch(`/defensasmanagament/${id_defensa}`, {
+    method: "DELETE",
+  });
+}

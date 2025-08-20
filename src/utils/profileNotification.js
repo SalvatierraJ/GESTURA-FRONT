@@ -1,12 +1,9 @@
-// Función para crear notificación de perfil incompleto con JavaScript vanilla
 export function createProfileNotification() {
-  // Verificar si ya existe una notificación
   const existingNotification = document.getElementById("profile-notification");
   if (existingNotification) {
     existingNotification.remove();
   }
 
-  // Crear el elemento de notificación
   const notification = document.createElement("div");
   notification.id = "profile-notification";
   notification.style.cssText = `
@@ -25,7 +22,6 @@ export function createProfileNotification() {
     animation: slideIn 0.3s ease-out;
   `;
 
-  // Crear el contenido HTML
   notification.innerHTML = `
     <div style="display: flex; align-items: center; gap: 12px;">
       <span style="font-size: 20px;">⚠️</span>
@@ -49,7 +45,6 @@ export function createProfileNotification() {
     </div>
   `;
 
-  // Agregar animación CSS
   const style = document.createElement("style");
   style.textContent = `
     @keyframes slideIn {
@@ -65,22 +60,18 @@ export function createProfileNotification() {
   `;
   document.head.appendChild(style);
 
-  // Agregar event listeners
   notification.addEventListener("click", function (e) {
     if (e.target.id !== "close-notification") {
-      // Redirigir a ajustes
       window.location.href = "/home/ajustes";
     }
   });
 
-  // Event listener para cerrar (solo para testing)
   const closeBtn = notification.querySelector("#close-notification");
   closeBtn.addEventListener("click", function (e) {
     e.stopPropagation();
-    // En producción no permitir cerrar
   });
 
-  // Agregar al body
+  // Agregar al bod
   document.body.appendChild(notification);
 
   return notification;

@@ -1,10 +1,14 @@
 import { apiFetch } from "./api";
 
 export async function fetchEstudiantes(page, pageSize, word = '') {
-  return apiFetch(`/student-managament/estudiantes/${page}/${pageSize}${word.trim() != null ? '/'+word : ''}`, {
-    method: "GET",
+  const q = new URLSearchParams({
+    page: String(page),
+    pageSize: String(pageSize),
+    word: word || '',  
   });
+  return apiFetch(`/student-managament/estudiantes?${q.toString()}`, { method: 'GET' });
 }
+
 
 export async function createEstudiante({estudiantes}) {
   console.log("funcion expulsar",{estudiantes});
@@ -38,3 +42,22 @@ export async function generarDefensa(params) {
   });
 }
 
+export async function updateEstadoOBorradoEstudiante(id, payload) {
+  return apiFetch(`/student-managament/estudiante/${id}/estado-o-borrado`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function setEstadoEstudiante(id, estado) {
+  return updateEstadoOBorradoEstudiante(id, { estado });
+}
+
+export async function softDeleteEstudiante(id) {
+  return updateEstadoOBorradoEstudiante(id, { delete: true });
+}
+
+export async function restoreEstudiante(id) {
+  return updateEstadoOBorradoEstudiante(id, { delete: false });
+}

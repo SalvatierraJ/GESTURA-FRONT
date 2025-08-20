@@ -1,137 +1,49 @@
-import React, { useState, useEffect } from "react";
+// src/features/Administrador/pages/DocentesPage.jsx
+import React from "react";
 import ManagementLayout from "@/components/administradorContenido";
-import Horario from "@/features/Administrador/components/modal-horario";
-import Contratos from "@/features/Administrador/components/modal-contrato";
-import NuevoDocente from "@/features/Administrador/components/modal-nuevoDocente";
-import { useDocentesStore } from "@/store/docentes.store";
+import NuevoDocente from "@/features/Administrador/components/gestionDocente/modal-nuevoDocente";
 import InputBuscar from "@/components/searchInput";
 import { Paginator } from "primereact/paginator";
-import debounce from "lodash.debounce";
-const TeacherRow = ({
-  docente,
-  handleEditar,
-  actualizarEstadoDocente,
-  cargarDocentes,
-}) => (
-  <tr className="border-b last:border-none hover:bg-gray-50">
-    <td className="px-4 py-3 text-sm text-gray-700">{docente.id_tribunal}</td>
-    <td className="px-4 py-3 text-sm text-gray-700">{docente.Nombre}</td>
-    <td className="px-4 py-3 text-sm text-gray-700">{docente.Apellido}, </td>
-    <td className="px-4 py-3 text-sm text-gray-700">
-      {(docente.areas || []).map((a) => a.nombre_area).join(", ")}
-    </td>{" "}
-    <td className="px-4 py-3">
-      {docente.estado == true ? (
-        <span
-          className="text-xs font-semibold text-green-800 bg-green-200 px-2 py-1 rounded-full cursor-pointer"
-          onClick={async () => {
-            await actualizarEstadoDocente({
-              id: docente.id_tribunal,
-              estado: false,
-            });
-            cargarDocentes(1, 10);
-          }}
-        >
-          Activo
-        </span>
-      ) : (
-        <span
-          className="text-xs font-semibold text-red-800 bg-red-200 px-2 py-1 rounded-full cursor-pointer"
-          onClick={async () => {
-            await actualizarEstadoDocente({
-              id: docente.id_tribunal,
-              estado: true,
-            });
-            cargarDocentes(1, 10);
-          }}
-        >
-          Inactivo
-        </span>
-      )}
-    </td>
-    <td className="px-4 py-3 text-center space-x-3">
-      <button
-        className="text-black hover:red-600 cursor-pointer"
-        onClick={() => handleEditar(docente)}
-      >
-        <i className="fas fa-edit"></i>
-      </button>
-      <Horario />
-    </td>
-  </tr>
-);
+import ConfirmDeleteModal from "@/features/Administrador/components/common/ConfirmDeleteModal";
+import TeacherRow from "@/features/Administrador/components/gestionDocente/TeacherRow";
+import { useDocentesPage } from "@/features/Administrador/hooks/gestionDocente/useDocentesPage";
 
-const TeacherContract = ({ teacher }) => (
-  <tr className="border-b last:border-none hover:bg-gray-50">
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.id}</td>
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.firstName}</td>
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.lastName}</td>
-    <td className="px-4 py-3 text-sm text-gray-700">{teacher.typeContract}</td>
-    <td className="px-4 py-3 text-center space-x-2">
-      <span className="text-blue-600 hover:text-blue-800 cursor-pointer">
-        <i className="fas fa-edit"></i>
-      </span>
-      <Contratos />
-    </td>
-  </tr>
-);
+import AsignarDocentesMaterias from "./AsignacionMateriaDocente";
 
-const MainContent = () => {
-  const [activeTab, setActiveTab] = useState("docentes");
-  const { cargarDocentes, docentes, total, loading, actualizarEstadoDocente } =
-    useDocentesStore();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [modalDocenteVisible, setModalDocenteVisible] = useState(false);
-  const [docenteAEditar, setDocenteAEditar] = useState(null);
-  const handleCrear = () => {
-    setDocenteAEditar(null);
-    setModalDocenteVisible(true);
-  };
-  const handleEditar = (docente) => {
-    setDocenteAEditar(docente);
-    setModalDocenteVisible(true);
-  };
-  useEffect(() => {
-    if (activeTab === "docentes") cargarDocentes(page, pageSize);
-  }, [activeTab,page, pageSize, cargarDocentes]);
+export default function DocentesPage() {
+  const {
+    docentes,
+    total,
+    loading,
 
+    activeTab,
+    setActiveTab,
+    searchTerm,
+    setSearchTerm,
+    page,
+    pageSize,
+    onPageChange,
 
+    modalDocenteVisible,
+    setModalDocenteVisible,
+    docenteAEditar,
+    openNuevoDocente,
+    openEditarDocente,
 
-//debounce
-useEffect(() => {
-  const debounceCargarDatos = debounce(() => {
-    if (activeTab === "docentes") {
-      cargarDocentes(page, pageSize, searchTerm);
+    confirmOpen,
+    setConfirmOpen,
+    toDelete,
+    askDelete,
+    confirmDelete,
 
-    }
-  }, 500);
-  
-  debounceCargarDatos();
-  
-  return () => debounceCargarDatos.cancel();
-}, [searchTerm, activeTab, page, pageSize, cargarDocentes]);
+    onToggleEstado,
+    recargar,
+  } = useDocentesPage();
 
-
-
-
-
-  useEffect(() => {
-    setPage(1);
-    setPageSize(10);
-  }, [activeTab]);
-  const onPageChange = (event) => {
-    setPage(event.page + 1);
-    setPageSize(event.rows);
-  };
-
-  const filteredDocentes = docentes.filter((c) =>
-    (c.Nombre || "").toLowerCase().includes(searchTerm.toLowerCase())
-  );
   const tabs = [
     { key: "docentes", label: "Docentes" },
     { key: "contratos", label: "Contratos" },
+    { key: "Materia", label: "Materias" },
   ];
 
   const actions = {
@@ -143,21 +55,22 @@ useEffect(() => {
         placeholder="Buscar Docente..."
       />,
       <NuevoDocente
+        key="nuevo"
         visible={modalDocenteVisible}
         setVisible={setModalDocenteVisible}
         docenteEditar={docenteAEditar}
-        onSuccess={() => {
-          cargarDocentes(page, pageSize);
-        }}
+        onSuccess={recargar}
       />,
       <button
         key="jurado"
         className="bg-white border border-red-600 text-red-600 text-sm font-medium px-4 py-2 rounded-lg hover:bg-red-50"
+        onClick={() => {}}
       >
         Solicitar Jurado Externo
       </button>,
     ],
   };
+  
 
   return (
     <ManagementLayout
@@ -185,7 +98,7 @@ useEffect(() => {
                   Área de Especialización
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Activo Jurado
+                  Estado
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
@@ -193,17 +106,31 @@ useEffect(() => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredDocentes.map((docente) => (
+              {docentes.map((docente) => (
                 <TeacherRow
                   key={docente.id_tribunal}
                   docente={docente}
-                  handleEditar={handleEditar}
-                  actualizarEstadoDocente={actualizarEstadoDocente}
-                  cargarDocentes={cargarDocentes}
+                  page={page}
+                  pageSize={pageSize}
+                  onEdit={openEditarDocente}
+                  onToggleEstado={onToggleEstado}
+                  onAskDelete={askDelete}
                 />
               ))}
+
+              {!loading && docentes.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-4 py-6 text-center text-gray-500"
+                  >
+                    No existen datos
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
+
           <div className="w-full flex justify-center mt-4">
             <Paginator
               first={(page - 1) * pageSize}
@@ -239,22 +166,24 @@ useEffect(() => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {0 === 0 ? (
-              <div className="text-center text-gray-500 my-4">
+            <tr>
+              <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
                 No existen datos
-              </div>
-            ) : (
-              teachers.map((teacher) => (
-                <TeacherContract key={teacher.id} teacher={teacher} />
-              ))
-            )}
+              </td>
+            </tr>
           </tbody>
         </table>
       )}
+
+      {activeTab === "Materia" && <AsignarDocentesMaterias />}
+
+      <ConfirmDeleteModal
+        open={confirmOpen}
+        name={toDelete.name}
+        entityLabel="docente"
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={confirmDelete}
+      />
     </ManagementLayout>
   );
-};
-
-export default function MainLayout() {
-  return <MainContent />;
 }

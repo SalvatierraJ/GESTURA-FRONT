@@ -12,6 +12,7 @@ import { usePensumStore } from "../../../store/materia.store";
 import { Dropdown } from "primereact/dropdown";
 import ModalEditPrereqEquiv from "../components/pensum/modalPreReq";
 import { Button } from "primereact/button";
+import Simulador from "@/features/Administrador/components/pensum/SimuladorAperturaMaterias";
 const SidebarContent = memo(
   ({
     materiasPorSemestre,
@@ -152,6 +153,10 @@ export default function PensumEstudiante() {
       key: "estudiantes",
       label: "Estudiantes Programados",
     },
+     {
+      key: "simulador",
+      label: "Simulador de Apertura de Materias",
+    },
     {
       key: "ajustes",
       label: "Ajuste de Pensum",
@@ -282,7 +287,6 @@ export default function PensumEstudiante() {
               />
             </div>
 
-            {/* LOADING */}
             {loadingPensum && (
               <div className="flex justify-center items-center my-8">
                 <i className="pi pi-spin pi-spinner text-4xl text-red-700" />
@@ -290,7 +294,6 @@ export default function PensumEstudiante() {
               </div>
             )}
 
-            {/* PENSUM AJUSTADO */}
             {ajusteMateria.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8 w-full max-w-6xl mx-auto mt-6">
                 <div>
@@ -328,7 +331,6 @@ export default function PensumEstudiante() {
               </div>
             )}
 
-            {/* MENSAJE SI NO SE HA BUSCADO AÚN O NO HAY RESULTADOS */}
             {!loadingPensum && ajusteMateria.length === 0 && (
               <div className="text-center text-black mt-6">
                 Selecciona una carrera y un pensum, luego haz clic en "Buscar".
@@ -345,6 +347,15 @@ export default function PensumEstudiante() {
             onSave={handleSave}
           />
         </>
+      )}
+
+      {activeTab === "simulador" && (
+        
+        <Simulador
+          optins={options}
+          MODULOS={MODULOS}
+        />
+
       )}
     </ManagementLayout>
   );

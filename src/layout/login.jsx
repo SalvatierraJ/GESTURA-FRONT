@@ -8,6 +8,9 @@ import { login, fetchProfile } from "@/services/auth";
 import { useAuthStore } from "@/store/authStore";
 import { useNavigate } from "react-router-dom";
 import ErrorModal from "@/components/errorModal";
+const REDIRECT_URI =
+  import.meta.env.VITE_REDIRECT_URI || window.location.origin;
+
 const LoginForm = () => {
   const {
     loginWithRedirect,
@@ -15,45 +18,76 @@ const LoginForm = () => {
     isAuthenticated,
     user,
     getIdTokenClaims,
+    isLoading,
   } = useAuth0();
   const loginWithOauth = useAuthStore((s) => s.loginWithOauth);
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
   const [socialLoading, setSocialLoading] = useState(false);
+  const ranOnceRef = useRef(false);
+  useEffect(() => {
+    if (isLoading || !isAuthenticated || ranOnceRef.current) return;
+    ranOnceRef.current = true;
+    (async () => {
+      try {
+        const access_token = await getAccessTokenSilently({
+          authorizationParams: {
+            audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+            scope: "openid profile email",
+          },
+        });
+
+        const id_token = (await getIdTokenClaims())?.__raw;
+        if (!id_token || !access_token) throw new Error("Tokens faltantes");
+
+        const { success } = await loginWithOauth({ id_token, access_token });
+        if (!success) throw new Error("Backend rechazó OAuth");
+
+        const userProfile = await fetchProfile();
+        setAuth(userProfile, access_token);
+        const roles = (userProfile.roles || []).map((r) =>
+          (r.Nombre || "").trim().toLowerCase()
+        );
+        navigate(
+          roles.length === 1 && roles[0] === "estudiante"
+            ? "/estudiante"
+            : "/home"
+        );
+      } catch (e) {
+        setSocialLoading(false);
+        setErrorModal(true);
+      }
+    })();
+  }, [isAuthenticated, isLoading]);
 
   useEffect(() => {
-    const doLoginOauth = async () => {
-      if (isAuthenticated) {
-        setSocialLoading(true);
-        const access_token = await getAccessTokenSilently();
-        const id_token_claims = await getIdTokenClaims();
-        const id_token = id_token_claims.__raw;
-        const { success } = await loginWithOauth({ id_token, access_token });
-        if (success) {
-          const userProfile = await fetchProfile();
-          setAuth(userProfile, access_token);
-
-          const roles =
-            userProfile.roles?.map((r) =>
-              (r.Nombre || "").trim().toLowerCase()
-            ) || [];
-          setSocialLoading(false);
-          if (roles.length === 1 && roles[0] === "estudiante") {
-            navigate("/estudiante");
-          } else {
-            navigate("/home");
-          }
-        } else {
-          setErrorModal(true);
-        }
-      }
-    };
-
-    doLoginOauth();
-  }, [isAuthenticated]);
+    if (window.location.search.includes("error")) {
+      const params = new URLSearchParams(window.location.search);
+      console.error(
+        "OAuth error:",
+        params.get("error"),
+        params.get("error_description")
+      );
+      alert(
+        "OAuth error: " +
+          params.get("error") +
+          " - " +
+          params.get("error_description")
+      );
+    }
+  }, []);
   const handleMicrosoftLogin = () => {
+    console.log("=== INICIANDO LOGIN MICROSOFT ===");
+    console.log("Current URL:", window.location.href);
+    console.log("Expected redirect:", REDIRECT_URI);
+    console.log("===================================");
     loginWithRedirect({
-      connection: "AzureADv2",
+      authorizationParams: {
+        prompt: "login",
+        connection: "AzureADv2",
+        audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+        scope: "openid profile email",
+      },
     });
   };
 

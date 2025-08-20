@@ -28,15 +28,28 @@ export async function searchPeople(query) {
 
 
 export async function loginOauth({ id_token, access_token }) {
-  console.log("Logging in with OAuth", { id_token });
-  return apiFetch("/auth/login-oauth", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${access_token}`,
-    },
-    body: JSON.stringify({ id_token }),
-  });
+  console.log("=== OAUTH LOGIN DEBUG ===");
+  console.log("API URL:", import.meta.env.VITE_API_URL);
+  console.log("ID Token presente:", !!id_token);
+  console.log("Access Token presente:", !!access_token);
+  
+  try {
+    const result = await apiFetch("/auth/login-oauth", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${access_token}`,
+      },
+      body: JSON.stringify({ id_token, access_token }),
+    });
+    
+    console.log("Login OAuth exitoso");
+    return result;
+  } catch (error) {
+    console.error("Error en loginOauth service:", error);
+    console.error("Error message:", error.message);
+    throw error;
+  }
 }
 
 
