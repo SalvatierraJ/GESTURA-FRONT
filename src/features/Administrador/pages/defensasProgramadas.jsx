@@ -45,6 +45,9 @@ const DefenseRow = ({ student, selected, onToggle, onAskDelete }) => {
         {student.aula ? student.aula : "Sin Aula"}
         <AddAula id_defensa={student.id_defensa} notaActual={student.nota} />
       </td>
+        <td className="px-4 py-3 text-sm text-gray-700">
+        {student.area ? student.area : "Sin Area"}
+      </td>
       <td className="px-4 py-3 text-sm text-gray-700">
         <ArchivoDefensa url={student.casos_de_estudio?.url} />
       </td>
@@ -370,6 +373,9 @@ const MainContent = () => {
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Aula
+                </th>
+                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Area Asignada
                 </th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Caso de Estudio
