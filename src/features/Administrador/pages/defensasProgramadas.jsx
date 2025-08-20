@@ -11,13 +11,14 @@ import InputBuscar from "@/components/searchInput";
 import ArchivoDefensa from "@/features/Administrador/components/defensasProgramadas/descargarCasoEstudio";
 import debounce from "lodash.debounce";
 import ConfirmDeleteModal from "@/features/Administrador/components/common/ConfirmDeleteModal";
+import ModalGenerarDocumento from "../components/ModalGenerarDocumento";
 
 const truncarTexto = (texto, maxLength = 30) => {
   return texto.length > maxLength
     ? `${texto.substring(0, maxLength)}...`
     : texto;
 };
-const DefenseRow = ({ student, selected, onToggle, onAskDelete }) => {
+const DefenseRow = ({ student, selected, onToggle, onAskDelete, OnClickDocument, defensa}) => {
   const tieneJurados = student.jurados && student.jurados.length > 0;
   const checked = selected.includes(student.id_defensa);
 
@@ -89,7 +90,7 @@ const DefenseRow = ({ student, selected, onToggle, onAskDelete }) => {
         <AddNota id_defensa={student.id_defensa} notaActual={student.nota} />
       </td>
 
-      <td className="px-4 py-3 text-center">
+      <td className="px-4 py-3 text-center flex gap-5">
         <button
           className={`text-red-600 hover:text-white hover:bg-red-700 rounded p-1 ${
             tieneJurados ? "opacity-50 cursor-not-allowed" : ""
@@ -108,8 +109,18 @@ const DefenseRow = ({ student, selected, onToggle, onAskDelete }) => {
           }
         >
           <i className="fas fa-trash" />
-        </button>
+        </button > <button 
+  className="bg-blue-500 text-white font-bold py-1 px-3 rounded-md shadow-lg 
+             transform hover:-translate-y-1 
+             transition-transform duration-300 ease-out" onClick={() =>
+          {OnClickDocument();
+            defensa(student);
+          }
+        }>
+  Generar documentos
+</button> 
       </td>
+      
     </tr>
   );
 };
@@ -126,6 +137,9 @@ const MainContent = () => {
   const [tieneJurados, setTieneJurados] = useState(false);
   const [juradosrray, setJuradosrray] = useState({});
   const [tituloModal, setTituloModal] = useState("Asignar Jurados");
+  const [modalGenerarDocumento, setModalGenerarDocumento] = useState(false);
+  const [defensaSeleccionada, setDefensaSeleccionada] = useState();
+  const generarDocumento = () => setModalGenerarDocumento(true);
   const modalRef = useRef(null);
   const {
     defensasInterna,
@@ -347,7 +361,7 @@ const MainContent = () => {
       activeTab={activeTab}
       onTabChange={setActiveTab}
     >
-      {activeTab === "Interna" && (
+<ModalGenerarDocumento visible={modalGenerarDocumento} onHide={() =>setModalGenerarDocumento(false)} defensa={defensaSeleccionada}/>      {activeTab === "Interna" && (
         <>
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -398,6 +412,8 @@ const MainContent = () => {
                   AddAula={AddAula}
                   SetTieneJurados={setTieneJurados}
                   onAskDelete={onAskDelete}
+                  OnClickDocument={generarDocumento}
+                  defensa={setDefensaSeleccionada}
                 />
               ))}
             </tbody>
@@ -458,6 +474,7 @@ const MainContent = () => {
                   onToggle={toggleSelect}
                   AddAula={AddAula}
                   onAskDelete={onAskDelete}
+                  defensa={setDefensaSeleccionada}
                 />
               ))}
             </tbody>

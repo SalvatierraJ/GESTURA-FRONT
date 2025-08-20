@@ -29,7 +29,7 @@ export const createPlantillas = async({
 
 export async function getPlantillasByUsuario(id_usuario) {
     const url = `/plantilla-service/usuario/${id_usuario}`;
-    return apiFetch(url, { method: "GET" });
+    return await apiFetch(url, { method: "GET" });
 }
 
 export async function getPlantillasByModulo(id_modulo) {

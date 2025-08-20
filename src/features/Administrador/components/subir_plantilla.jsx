@@ -5,6 +5,7 @@ import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
 import { FileUpload } from "primereact/fileupload";
 import { Toast } from "primereact/toast";
+import { usePlantillaStore } from "../../../store/plantilla.store";
 
 const CATEGORIAS = [
   { label: "Offer Letter", value: "Offer Letter" },
@@ -19,27 +20,31 @@ export default function DialogSubirPlantilla({ onUpload }) {
   const [categoria, setCategoria] = useState(null);
   const [archivo, setArchivo] = useState(null);
   const [touched, setTouched] = useState({});
+  const {subirPlantillas} = usePlantillaStore();
   const toast = useRef();
 
   const handleSelectFile = (e) => {
     setArchivo(e.files?.[0] || null);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setTouched({ titulo: true, categoria: true, archivo: true });
+const handleSubmit = (e) => { 
+  e.preventDefault();
+  setTouched({ titulo: true, categoria: true, archivo: true });
 
-    if (!titulo.trim() || !categoria || !archivo) return;
+  if (!titulo.trim() || !categoria || !archivo) return;
+  const id_modulo_ejemplo = 1;
 
-    // Simulación de upload, puedes reemplazar por tu lógica real
-    if (onUpload) {
-      onUpload({ titulo, categoria, archivo });
-    }
+  const onSuccess = (result) => {
     toast.current.show({
       severity: "success",
       summary: "Plantilla subida",
       detail: `Se subió: ${titulo}`,
     });
+
+    if (onUpload) {
+      onUpload();
+    }
+    
     setVisible(false);
     setTitulo("");
     setCategoria(null);
@@ -47,6 +52,23 @@ export default function DialogSubirPlantilla({ onUpload }) {
     setTouched({});
   };
 
+  const onError = (error) => {
+    console.error("Error al subir la plantilla:", error);
+    toast.current.show({
+      severity: "error",
+      summary: "Error",
+      detail: "No se pudo subir la plantilla.",
+    });
+  };
+
+  subirPlantillas({
+    file: archivo, 
+    id_modulo: id_modulo_ejemplo, 
+    titulo: titulo,
+    categoria: categoria,
+    onSuccess: onSuccess, 
+  }).catch(onError); 
+};
   const header = (
     <div
       className="flex items-center rounded-t-2xl justify-between px-6 py-4"
@@ -129,7 +151,7 @@ export default function DialogSubirPlantilla({ onUpload }) {
             <FileUpload
               mode="basic"
               name="file"
-              accept=".pdf,.doc,.docx"
+              accept=".pdf,.doc,.docx, .xls, .xlsx"
               maxFileSize={4000000}
               chooseLabel="Seleccionar archivo"
               className={`border-black rounded w-full ${touched.archivo && !archivo ? "p-invalid" : ""}`}
