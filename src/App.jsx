@@ -104,7 +104,7 @@ function App() {
           <Route path="/estudiante" element={<Home />}>
             <Route path="misDefensas" element={<MisDefensas />} />
             <Route
-              path="misDefensas/detallesDefensa"
+              path="misDefensas/detallesDefensa/:id"
               element={<DefensaDetalles />}
             />
             <Route path="prototipo" element={<Prototipo />} />

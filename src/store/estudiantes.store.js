@@ -8,10 +8,15 @@ import {
   setEstadoEstudiante,
   softDeleteEstudiante,
   restoreEstudiante,
+  getMisDefensas,
+  getDetallesDefensa,
+  subirDocumentosDefensa
 } from "@/services/estudiantes.services";
 
 export const useEstudiantesStore = create((set, get) => ({
   estudiantes: [],
+  misDefensas: [],
+  defensaActual: null,
   total: 0,
   page: 1,
   pageSize: 10,
@@ -73,6 +78,57 @@ export const useEstudiantesStore = create((set, get) => ({
     } catch (error) {
       set({ error: error.message || "Error al crear estudiantes", loading: false });
       throw error;
+    }
+  },
+
+  cargarMisDefensas: async () => {
+    set({ loading: true, error: null });
+    try {
+      const data = await getMisDefensas(); 
+      set({
+        misDefensas: data || [],
+        loading: false,
+      });
+    } catch (error) {
+      set({ error, loading: false });
+    }
+  },
+
+  cargarDetalleDefensa: async (id) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await getDetallesDefensa(id);
+      set({
+        defensaActual: data,
+        loading: false,
+      });
+    } catch (error) {
+      set({ error, loading: false });
+    }
+  },
+
+ subirDocumentos: async (id_defensa, file) => {
+    set({ loading: true, error: null });
+    try {
+      const result = await subirDocumentosDefensa(id_defensa, file);
+      const nuevoArchivo = result.archivos[0]; 
+      
+      set(state => {
+        if (state.defensaActual && state.defensaActual.id_defensa === id_defensa) {
+          return {
+            defensaActual: {
+              ...state.defensaActual,
+              archivos_defensa: [nuevoArchivo], 
+            }
+          };
+        }
+        return state;
+      });
+
+      return result;
+    } catch (error) {
+      set({ error, loading: false });
+      throw error; 
     }
   },
 

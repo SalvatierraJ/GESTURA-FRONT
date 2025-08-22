@@ -61,3 +61,24 @@ export async function softDeleteEstudiante(id) {
 export async function restoreEstudiante(id) {
   return updateEstadoOBorradoEstudiante(id, { delete: false });
 }
+export async function getMisDefensas() {
+  return apiFetch("/student-managament/getMisDefensas", {
+    method: "GET",
+  });
+}
+
+export async function getDetallesDefensa(id) {
+  return apiFetch(`/student-managament/defensas/${id}`, {
+    method: "GET",
+  });
+}
+
+export async function subirDocumentosDefensa(id_defensa, file) {
+  const formData = new FormData();
+  formData.append('files', file);
+
+  return apiFetch(`/student-managament/defensas/${id_defensa}/subir-documento`, {
+    method: "POST",
+    body: formData,
+  });
+}
