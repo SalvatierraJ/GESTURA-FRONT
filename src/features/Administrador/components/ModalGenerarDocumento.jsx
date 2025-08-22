@@ -18,7 +18,7 @@ useEffect(() => {
       setLoading(true);
       try {
         const response = await getPlantillas();
-        const datosReales = response?.response?.data || [];
+        const datosReales = response?.data || [];
         setPlantillasDat(datosReales);
 
       } catch (error) {
@@ -72,7 +72,7 @@ useEffect(() => {
         value={selectedTemplate}
         onChange={(e) => {setSelectedTemplate(e.value); } }
         options={plantillasDat} 
-        optionLabel="nombre"
+        optionLabel="nombre_archivo"
         optionValue="id_plantilla" 
         placeholder="Elige una plantilla para el documento"
         className="w-full"
