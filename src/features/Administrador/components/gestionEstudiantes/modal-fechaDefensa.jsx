@@ -57,6 +57,7 @@ export default function ModalAsignarDefensaSorteo({
   const handleGuardar = async (e) => {
     e.preventDefault();
     if (!fechaHora) return;
+    const fechaHoraConZona = fechaHora + ":00.000Z";
     setLoading(true);
     setResultados(null);
 
@@ -64,7 +65,7 @@ export default function ModalAsignarDefensaSorteo({
 
     try {
       const data = await generarDefensa({
-        fechaHora,
+        fechaHora: fechaHoraConZona,
         sorteaArea,
         sorteaCaso,
         estudianteIds,
@@ -174,7 +175,10 @@ export default function ModalAsignarDefensaSorteo({
                   <b>Caso:</b> {r.caso}
                 </div>
                 <div>
-                  <b>Fecha:</b> {new Date(r.fecha).toLocaleString()}
+                  <b>Fecha:</b> {new Date(r.fecha).toISOString().split("T")[0]}
+                  <br />
+                  <b>Hora:</b>{" "}
+                  {new Date(r.fecha).toISOString().split("T")[1].slice(0, 5)}
                 </div>
               </div>
             ))}
