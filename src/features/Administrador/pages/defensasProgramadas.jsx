@@ -12,7 +12,22 @@ import ArchivoDefensa from "@/features/Administrador/components/defensasPrograma
 import debounce from "lodash.debounce";
 import ConfirmDeleteModal from "@/features/Administrador/components/common/ConfirmDeleteModal";
 import ModalGenerarDocumento from "../components/ModalGenerarDocumento";
-
+import {Calendar} from 'primereact/calendar';
+import { addLocale } from 'primereact/api'; 
+const today = new Date();
+//Configuracion en espanol para el calendario
+addLocale('es', {
+    firstDayOfWeek: 1,
+    dayNames: ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'],
+    dayNamesShort: ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'],
+    dayNamesMin: ['D', 'L', 'M', 'X', 'J', 'V', 'S'],
+    monthNames: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
+    monthNamesShort: ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
+    today: 'Hoy',
+    clear: 'Limpiar',
+    chooseDate: 'Elegir Fecha',
+    weekHeader: 'Sm'
+});
 const truncarTexto = (texto, maxLength = 30) => {
   return texto.length > maxLength
     ? `${texto.substring(0, maxLength)}...`
@@ -143,6 +158,12 @@ const MainContent = () => {
   const [modalGenerarDocumento, setModalGenerarDocumento] = useState(false);
   const [defensaSeleccionada, setDefensaSeleccionada] = useState();
   const generarDocumento = () => setModalGenerarDocumento(true);
+  //Variables para las fechas
+  const [fechaInicio, setFechaInicio] = useState(null);
+  const [fechaFin, setFechaFin] = useState(null);
+  //Filtro para los fechas 
+const [defensasInternasFiltradas, setDefensasInternasFiltradas] = useState([]);
+const [defensasExternasFiltradas, setDefensasExternasFiltradas] = useState([]);
   const modalRef = useRef(null);
   const {
     defensasInterna,
@@ -220,7 +241,35 @@ const MainContent = () => {
     setPage(event.page + 1);
     setPageSize(event.rows);
   };
+ useEffect(() => {
+  console.log(defensasExternas, defensasInterna);
+  if (!defensasInterna || !defensasExternas) {
+    setDefensasInternasFiltradas([]);
+    setDefensasExternasFiltradas([]);
+    return;
+  }
+  const resultadoInterno = defensasInterna.filter((defensa) => {
+    if (!fechaInicio && !fechaFin) {
+      return true;
+    }
+    const fechaDefensa = new Date(defensa.fecha_defensa);
+    const pasaFiltroInicio = fechaInicio ? fechaDefensa >= fechaInicio : true;
+    const pasaFiltroFin = fechaFin ? fechaDefensa <= fechaFin : true;
+    return pasaFiltroInicio && pasaFiltroFin;
+  });
+  const resultadoExterno = defensasExternas.filter((defensa) => {
+    if (!fechaInicio && !fechaFin) {
+      return true;
+    }
+    const fechaDefensa = new Date(defensa.fecha_defensa);
+    const pasaFiltroInicio = fechaInicio ? fechaDefensa >= fechaInicio : true;
+    const pasaFiltroFin = fechaFin ? fechaDefensa <= fechaFin : true;
+    return pasaFiltroInicio && pasaFiltroFin;
+  });
+  setDefensasInternasFiltradas(resultadoInterno);
+  setDefensasExternasFiltradas(resultadoExterno);
 
+}, [fechaInicio, fechaFin, defensasInterna, defensasExternas]);
   const toggleSelect = (
     id_defensa,
     tienejurados,
@@ -315,12 +364,15 @@ const MainContent = () => {
   ]);
 
   const actions = [
+        <Calendar showIcon locale="es" placeholder="Elegir la fecha de inicio" className="h-10" value={fechaInicio} dateFormat="dd/mm/yy" onChange={(e) => {setFechaInicio(e.value)}} maxDate={fechaFin  ||  today}/>,
+        <Calendar showIcon locale="es" placeholder="Elegir la fecha de fin" className="h-10" value={fechaFin} dateFormat="dd/mm/yy" onChange={(e) => {setFechaFin(e.value)}} maxDate={today} minDate={fechaInicio}/>,
     <InputBuscar
       key="search"
       value={searchTerm}
       onChange={setSearchTerm}
       placeholder="Buscar Estudiante.."
     />,
+
     <ModalAsignarJurados
       ref={modalRef}
       defensasIds={selected}
@@ -409,7 +461,7 @@ const MainContent = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredDefensa.map((student) => (
+              {defensasInternasFiltradas.map((student) => (
                 <DefenseRow
                   key={student.id_defensa}
                   student={student}
@@ -472,7 +524,7 @@ const MainContent = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredDefensaExterna.map((student) => (
+              {defensasExternasFiltradas.map((student) => (
                 <DefenseRow
                   key={student.id_defensa}
                   student={student}
