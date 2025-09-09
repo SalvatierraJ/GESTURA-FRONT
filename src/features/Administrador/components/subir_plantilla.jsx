@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect} from "react";
 import { Dialog } from "primereact/dialog";
 import { Button } from "primereact/button";
 import { InputText } from "primereact/inputtext";
@@ -6,7 +6,7 @@ import { Dropdown } from "primereact/dropdown";
 import { FileUpload } from "primereact/fileupload";
 import { Toast } from "primereact/toast";
 import { usePlantillaStore } from "../../../store/plantilla.store";
-
+import { moduloStore } from "@/store/modulos.store";
 const CATEGORIAS = [
   { label: "Offer Letter", value: "Offer Letter" },
   { label: "Internship Agreement", value: "Internship Agreement" },
@@ -17,15 +17,28 @@ const CATEGORIAS = [
 export default function DialogSubirPlantilla({ onUpload }) {
   const [visible, setVisible] = useState(false);
   const [titulo, setTitulo] = useState("");
+  const [moduloId, setModuloId] = useState(null);
   const [categoria, setCategoria] = useState(null);
   const [archivo, setArchivo] = useState(null);
   const [touched, setTouched] = useState({});
   const {subirPlantillas} = usePlantillaStore();
+  const [modulosData, setModulosData] = useState([]);
   const toast = useRef();
-
+  const{ obtenerModulos, modulos} = moduloStore();
   const handleSelectFile = (e) => {
     setArchivo(e.files?.[0] || null);
   };
+ useEffect(() => {
+    if (Array.isArray(modulos) && modulos.length) {
+      const opciones = modulos.map(m => ({
+        label: m.Nombre ,
+        value: Number(m.Id_Modulo )
+      }));
+      setModulosData(opciones);
+    } else {
+      setModulosData([]);
+    }
+  }, [modulos]);
 
 const handleSubmit = (e) => { 
   e.preventDefault();
@@ -63,7 +76,7 @@ const handleSubmit = (e) => {
 
   subirPlantillas({
     file: archivo, 
-    id_modulo: id_modulo_ejemplo, 
+    id_modulo: moduloId, 
     titulo: titulo,
     categoria: categoria,
     onSuccess: onSuccess, 
@@ -132,9 +145,18 @@ const handleSubmit = (e) => {
               Categoría <span className="text-[#e11d1d]">*</span>
             </label>
             <Dropdown
-              value={categoria}
-              options={CATEGORIAS}
-              onChange={e => setCategoria(e.value)}
+              value={moduloId}
+              options={modulosData}
+              onChange={(e) => {
+    setModuloId(e.value);
+    const opcionSeleccionada = modulosData.find(
+      (opcion) => opcion.value === e.value
+    );
+    if (opcionSeleccionada) {
+      setCategoria(opcionSeleccionada.label);
+    }
+    setTouched((estadoAnterior) => ({ ...estadoAnterior, categoria: true }));
+  }} 
               className={`w-full border-black rounded ${touched.categoria && !categoria ? "p-invalid" : ""}`}
               placeholder="Selecciona una categoría"
               onBlur={() => setTouched(t => ({ ...t, categoria: true }))}
