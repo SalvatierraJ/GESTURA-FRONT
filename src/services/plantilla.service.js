@@ -104,15 +104,15 @@ export async function descargarArchivoPlantilla(id_plantilla) {
 
     if (contentType.includes('application/json')) {
         const json = await resp.json();
-        if (json ? .nombre_archivo) fileName = json.nombre_archivo;
+        if (json ?.nombre_archivo) fileName = json.nombre_archivo;
         let blob;
-        if (json ? .buffer ? .data) {
+        if (json ?.buffer ?.data) {
             const uint8 = new Uint8Array(json.buffer.data);
             blob = new Blob([uint8], { type: json.mime || 'application/octet-stream' });
-        } else if (Array.isArray(json ? .buffer)) { // por si viene como array plano
+        } else if (Array.isArray(json ?.buffer)) { // por si viene como array plano
             const uint8 = new Uint8Array(json.buffer);
             blob = new Blob([uint8], { type: json.mime || 'application/octet-stream' });
-        } else if (typeof json ? .buffer === 'string') { // posible base64
+        } else if (typeof json ?.buffer === 'string') { // posible base64
             try {
                 const b64 = json.buffer.split(',').pop();
                 const binary = atob(b64);

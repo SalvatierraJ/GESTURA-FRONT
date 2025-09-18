@@ -315,47 +315,20 @@ export const useCasosStore = create((set, get) => ({
     }
   },
 
-  actualizarCasoEstudio: async ({
-    id,
-    Titulo,
-    Autor,
-    Tema,
-    Fecha_Creacion,
-    id_area,
-    url,
-  }) => {
+  actualizarCaso: async (idCaso, payload) => {
     set({ loading: true, error: null });
     try {
-      const data = await updateCasoEstudio({
-        id,
-        Titulo,
-        Autor,
-        Tema,
-        Fecha_Creacion,
-        id_area,
-        url,
-      });
+      const result = await updateCasoEstudio({ id: idCaso, payload });
       set((state) => ({
-        casos: (state.casos || []).map((c) =>
-          c.id_casoEstudio === id
-            ? {
-                ...c,
-                ...data,
-                Titulo,
-                Autor,
-                Tema,
-                Fecha_Creacion,
-                id_area,
-                url,
-              }
-            : c
+        casos: state.casos.map((c) =>
+          c.id_casoEstudio === idCaso ? { ...c, ...result } : c
         ),
         loading: false,
       }));
-      return data;
-    } catch (error) {
-      set({ error: error?.message || String(error), loading: false });
-      throw error;
+      return result;
+    } catch (err) {
+      set({ error: err?.message || String(err), loading: false });
+      throw err;
     }
   },
 }));

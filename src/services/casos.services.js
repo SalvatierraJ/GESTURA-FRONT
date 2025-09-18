@@ -163,23 +163,39 @@ export async function restoreCasoEstudio(id) {
   });
 }
 
-export async function updateCasoEstudio({
-  id,
-  Titulo,
-  Autor,
-  Tema,
-  Fecha_Creacion,
-  id_area,
-}) {
-  return apiFetch(`/case-study-management/casos/${id}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      Titulo,
-      Autor,
-      Tema,
-      Fecha_Creacion,
-      id_area,
-    }),
-  });
+// casos.services.js
+export async function updateCasoEstudio({ id, payload }) {
+  try {
+    const { Titulo, Autor, Tema, Fecha_Creacion, id_area, documento } = payload;
+
+    const formData = new FormData();
+
+    // Agregar archivo si existe
+    if (documento?.file) {
+      formData.append('file', documento.file); // coincide con @UploadedFiles('file')
+    }
+
+    // Agregar metadatos
+    if (Titulo) formData.append('Titulo', Titulo);
+    if (Autor) formData.append('Autor', Autor);
+    if (Tema) formData.append('Tema', Tema);
+    if (Fecha_Creacion) {
+      formData.append(
+        'Fecha_Creacion',
+        Fecha_Creacion instanceof Date
+          ? Fecha_Creacion.toISOString()
+          : String(Fecha_Creacion)
+      );
+    }
+    if (id_area) formData.append('id_area', String(id_area));
+
+    console.log('FormData para actualizar caso:', Array.from(formData.entries()));
+
+    return apiFetch(`/case-study-management/casos/${id}`, {
+      method: 'PUT',
+      body: formData,
+    });
+  } catch (err) {
+    throw new Error(err.message || 'Error actualizando el caso');
+  }
 }
