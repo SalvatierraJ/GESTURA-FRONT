@@ -147,6 +147,7 @@ const MainContent = () => {
   const {
     defensasInterna,
     defensasExternas,
+    total,
     totalPages,
     loading,
     error,
@@ -428,7 +429,7 @@ const MainContent = () => {
             <Paginator
               first={(page - 1) * pageSize}
               rows={pageSize}
-              totalRecords={totalPages}
+              totalRecords={total}
               onPageChange={onPageChange}
               rowsPerPageOptions={[10, 25, 50]}
               template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
@@ -489,7 +490,7 @@ const MainContent = () => {
             <Paginator
               first={(page - 1) * pageSize}
               rows={pageSize}
-              totalRecords={totalPages}
+              totalRecords={total}
               onPageChange={onPageChange}
               rowsPerPageOptions={[10, 25, 50]}
               template="FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
