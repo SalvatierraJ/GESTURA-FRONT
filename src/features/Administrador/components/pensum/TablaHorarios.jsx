@@ -16,6 +16,7 @@ export default function TablaHorarios({
   setCantidadGrupo,
   setEstudiantesSeleccion,
   handleCrearGrupo,
+  handleNotificarEstudiantes,
   MODULOS,
 }) {
   if (!materiaData) return null;
@@ -226,33 +227,56 @@ export default function TablaHorarios({
                               </label>
                             ))}
                           </div>
-                          <button
-                            disabled={
-                              !moduloSel ||
-                              seleccionados.length !== cantidad ||
-                              cantidad < 1
-                            }
-                            className={`mt-4 px-5 py-2 font-bold rounded ${
-                              !moduloSel ||
-                              seleccionados.length !== cantidad ||
-                              cantidad < 1
-                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                : "bg-red-700 text-white hover:bg-black"
-                            }`}
-                            onClick={() =>
-                              handleCrearGrupo(
-                                h.turno,
-                                key,
-                                estudiantesTurno.filter((e) =>
-                                  seleccionados.includes(e.registro)
-                                ),
-                                moduloSel,
-                                cantidad
-                              )
-                            }
-                          >
-                            Generar grupo ({seleccionados.length})
-                          </button>
+                          <div className="flex gap-3 mt-4">
+                            <button
+                              disabled={
+                                !moduloSel ||
+                                seleccionados.length !== cantidad ||
+                                cantidad < 1
+                              }
+                              className={`px-5 py-2 font-bold rounded ${
+                                !moduloSel ||
+                                seleccionados.length !== cantidad ||
+                                cantidad < 1
+                                  ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                  : "bg-red-700 text-white hover:bg-black"
+                              }`}
+                              onClick={() =>
+                                handleCrearGrupo(
+                                  h.turno,
+                                  key,
+                                  estudiantesTurno.filter((e) =>
+                                    seleccionados.includes(e.registro)
+                                  ),
+                                  moduloSel,
+                                  cantidad
+                                )
+                              }
+                            >
+                              Generar grupo ({seleccionados.length})
+                            </button>
+                            
+                            <button
+                              disabled={seleccionados.length === 0}
+                              className={`px-4 py-2 font-bold rounded border-2 ${
+                                seleccionados.length === 0
+                                  ? "bg-gray-200 text-gray-500 border-gray-300 cursor-not-allowed"
+                                  : "bg-green-600 text-white border-green-600 hover:bg-green-700 hover:border-green-700"
+                              }`}
+                              onClick={() =>
+                                handleNotificarEstudiantes(
+                                  h.turno,
+                                  key,
+                                  estudiantesTurno.filter((e) =>
+                                    seleccionados.includes(e.registro)
+                                  )
+                                )
+                              }
+                            >
+                              <i className="pi pi-whatsapp mr-2"></i>
+                              Notificar ({seleccionados.length})
+                            </button>
+                          </div>
                           <div className="mt-2 text-xs">
                             <b>Rezagados seleccionados:</b>{" "}
                             {

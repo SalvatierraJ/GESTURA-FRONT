@@ -1,16 +1,17 @@
 import SelectorMateria from "./SelectorMateria";
 import TablaHorarios from "./TablaHorarios";
 import PanelGruposGenerados from "./PanelGruposGenerados";
+import ModalNotificarEstudiantes from "./ModalNotificarEstudiantes";
 import useAperturaMateriasSimulador from "../../hooks/pensum/useAperturaMateriasSimulador";
 import { Dropdown } from "primereact/dropdown";
 import { Button } from "primereact/button";
-import { ProgressSpinner } from "primereact/progressspinner"; 
+import { ProgressSpinner } from "primereact/progressspinner";
+import { Toaster } from "react-hot-toast"; 
 
 const MODULOS = ["M0", "M1", "M2", "M3", "M4", "M5"];
 
 export default function SimuladorAperturaMaterias({ optins }) {
   const {
-    materiasRecomendadas,
     loadingMateriasRecomendadas,
     selected,
     setSelected,
@@ -23,7 +24,6 @@ export default function SimuladorAperturaMaterias({ optins }) {
     modulosSeleccion,
     estudiantesSeleccion,
     cantidadGrupo,
-    estAsignados,
     materias,
     materiaData,
     getEstudiantesPorTurno,
@@ -32,18 +32,18 @@ export default function SimuladorAperturaMaterias({ optins }) {
     handleCrearGrupo,
     eliminarGrupo,
     getAnchoGrupo,
-    setHorariosApertura,
-    setAcordeon,
-    setGrupos,
     setModulosSeleccion,
     setEstudiantesSeleccion,
     setCantidadGrupo,
-    setEstAsignados,
-    clearMateriasRecomendadas,
+    // Funciones de notificación
+    modalNotificacion,
+    handleNotificarEstudiantes,
+    cerrarModalNotificacion,
   } = useAperturaMateriasSimulador();
 
   return (
     <>
+      <Toaster />
       <h2 className="text-2xl font-bold mb-4 text-black text-center">
         Seleccione el Pensum a Simular
       </h2>
@@ -109,6 +109,7 @@ export default function SimuladorAperturaMaterias({ optins }) {
                 setCantidadGrupo={setCantidadGrupo}
                 setEstudiantesSeleccion={setEstudiantesSeleccion}
                 handleCrearGrupo={handleCrearGrupo}
+                handleNotificarEstudiantes={handleNotificarEstudiantes}
                 MODULOS={MODULOS}
               />
               <PanelGruposGenerados
@@ -120,6 +121,19 @@ export default function SimuladorAperturaMaterias({ optins }) {
           )}
         </div>
       )}
+
+      {/* Modal de notificación */}
+      <ModalNotificarEstudiantes
+        visible={modalNotificacion.visible}
+        onHide={cerrarModalNotificacion}
+        estudiantes={modalNotificacion.estudiantes}
+        materia={materiaData?.materia?.nombre || ""}
+        turno={modalNotificacion.turno}
+        semestreMateria={parseInt(materiaData?.materia?.semestre || "1")}
+        onSuccess={() => {
+          // Opcional: agregar lógica adicional después del envío exitoso
+        }}
+      />
     </>
   );
 }

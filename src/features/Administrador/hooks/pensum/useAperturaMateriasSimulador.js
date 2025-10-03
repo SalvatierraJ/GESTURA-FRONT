@@ -19,6 +19,14 @@ export default function useAperturaMateriasSimulador() {
   const [estudiantesSeleccion, setEstudiantesSeleccion] = useState({});
   const [cantidadGrupo, setCantidadGrupo] = useState({});
   const [estAsignados, setEstAsignados] = useState({});
+  
+  // Estados para notificación
+  const [modalNotificacion, setModalNotificacion] = useState({
+    visible: false,
+    turno: "",
+    key: "",
+    estudiantes: []
+  });
 
   const materias = materiasRecomendadas.map((m) => m.materia);
   const materiaData = materiasRecomendadas.find(
@@ -141,6 +149,24 @@ export default function useAperturaMateriasSimulador() {
     return "w-1/3";
   }
 
+  function handleNotificarEstudiantes(turno, key, estudiantes) {
+    setModalNotificacion({
+      visible: true,
+      turno,
+      key,
+      estudiantes
+    });
+  }
+
+  function cerrarModalNotificacion() {
+    setModalNotificacion({
+      visible: false,
+      turno: "",
+      key: "",
+      estudiantes: []
+    });
+  }
+
   return {
     materiasRecomendadas,
     loadingMateriasRecomendadas,
@@ -172,5 +198,9 @@ export default function useAperturaMateriasSimulador() {
     setCantidadGrupo,
     setEstAsignados,
     clearMateriasRecomendadas,
+    // Funciones de notificación
+    modalNotificacion,
+    handleNotificarEstudiantes,
+    cerrarModalNotificacion,
   };
 }
