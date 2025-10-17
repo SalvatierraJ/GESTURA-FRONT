@@ -166,7 +166,7 @@ export default function ModalAsignarDefensaSorteo({
                 className="bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 mb-2 flex flex-col gap-1"
               >
                 <div>
-                  <b>Estudiante:</b> {r.estudiante}
+                  <b>Estudiante:</b> {r.nombreCompleto}
                 </div>
                 <div>
                   <b>Área:</b> {r.area}
