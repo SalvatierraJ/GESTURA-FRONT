@@ -44,7 +44,14 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
     generarDatosExcel,
     options: optionsHook,
     fetchCarrerasConPensum,
+    limpiarDatosStorage,
+    hayDatosEnStorage,
+    metadataStorage,
+    grupos, // Necesario para forzar re-render cuando cambien los grupos desde localStorage
   } = useProgramacionModulo();
+  
+  // Usar grupos en un useMemo para forzar actualización cuando cambien
+  useMemo(() => grupos, [grupos]);
 
   const options = optionsProp || optionsHook;
   const [materiaExpandida, setMateriaExpandida] = useState(null);
@@ -428,15 +435,41 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
               className="w-full"
             />
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <Button
               label="Cargar Datos"
               icon="pi pi-search"
               onClick={cargarDatos}
               disabled={!selectedCarrera || !gestion || loading}
-              className="w-full"
+              className="flex-1"
             />
+            {hayDatosEnStorage && (
+              <Button
+                label="Limpiar Datos Guardados"
+                icon="pi pi-trash"
+                onClick={() => {
+                  if (window.confirm("¿Está seguro de que desea limpiar todos los datos guardados? Esta acción no se puede deshacer.")) {
+                    limpiarDatosStorage();
+                  }
+                }}
+                className="p-button-danger"
+                title="Eliminar todos los grupos guardados en el almacenamiento local"
+              />
+            )}
           </div>
+          {hayDatosEnStorage && metadataStorage && (
+            <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-blue-800">
+                <i className="pi pi-info-circle"></i>
+                <span>
+                  <strong>Datos guardados encontrados:</strong> {metadataStorage.nombreCarrera} (Pensum {metadataStorage.numeroPensum}) - {metadataStorage.gestion}
+                </span>
+              </div>
+              <div className="text-xs text-blue-600 mt-1">
+                Los grupos se restaurarán automáticamente al cargar datos con la misma configuración.
+              </div>
+            </div>
+          )}
         </div>
 
         {data && (

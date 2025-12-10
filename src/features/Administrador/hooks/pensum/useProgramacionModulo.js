@@ -1,8 +1,45 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import toast from "react-hot-toast";
 import { usePensumStore } from "@/store/materia.store";
 
 const API_BASE_URL = "https://barbara-beings-commissions-zen.trycloudflare.com";
+
+// Materias bimodulares (ocupan 2 módulos consecutivos)
+const MATERIAS_BIMODULARES = [
+  "BMS-300", // INTRODUCCIÓN A LAS MATEMÁTICAS
+  "SCC-300", // CIENCIAS DE LA COMPUTACIÓN
+  "SAL-301", // ALGORITMOS Y PROGRAMACIÓN
+  "SRF-301", // REDES I
+  "SIS-302", // ADMINISTRACIÓN Y PROGRAMACIÓN DE BASE DE DATOS
+  "SIS-303", // ANÁLISIS Y MODELADO DE SISTEMAS
+  "SIS-304", // INGENIERÍA DE SOFTWARE
+  "SDA-304", // PROYECTO DE APLICACIONES MÓVILES
+  "SIS-306", // PROYECTO INTEGRADOR DE DESARROLLO DE SOLUCIONES EMPRESARIALES
+  "EEA-301", // CIRCUITOS ELÉCTRICOS
+  "EED-300", // ELECTRÓNICA DIGITAL
+  "SRF-302", // REDES II
+  "SRA-302", // REDES III
+  "SRA-303", // REDES IV
+  "STF-302", // COMUNICACIÓN DIGITAL
+];
+
+// Verificar si una materia es bimodular
+const esMateriaBimodular = (sigla) => {
+  return MATERIAS_BIMODULARES.includes(sigla);
+};
+
+// Obtener los módulos que ocupa una materia (1 módulo normal, 2 si es bimodular)
+const obtenerModulosOcupados = (sigla, moduloInicio) => {
+  if (esMateriaBimodular(sigla)) {
+    return [moduloInicio, moduloInicio + 1];
+  }
+  return [moduloInicio];
+};
+
+// Verificar si hay solapamiento de módulos
+const modulosSolapan = (modulos1, modulos2) => {
+  return modulos1.some((m1) => modulos2.includes(m1));
+};
 
 // Generar código de 3 dígitos único para grupos
 const generarCodigoGrupo = () => {
@@ -11,6 +48,49 @@ const generarCodigoGrupo = () => {
 
 // Generar ID único para grupos
 const generarIdGrupo = () => `grupo-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+// Clave para localStorage
+const STORAGE_KEY = "programacion_modulo_grupos";
+const STORAGE_KEY_METADATA = "programacion_modulo_metadata";
+
+// Funciones para localStorage
+const guardarGruposEnStorage = (grupos, metadata) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(grupos));
+    localStorage.setItem(STORAGE_KEY_METADATA, JSON.stringify(metadata));
+  } catch (error) {
+    console.error("Error al guardar en localStorage:", error);
+  }
+};
+
+const cargarGruposDeStorage = () => {
+  try {
+    const gruposStr = localStorage.getItem(STORAGE_KEY);
+    const metadataStr = localStorage.getItem(STORAGE_KEY_METADATA);
+    if (gruposStr && metadataStr) {
+      return {
+        grupos: JSON.parse(gruposStr),
+        metadata: JSON.parse(metadataStr),
+      };
+    }
+  } catch (error) {
+    console.error("Error al cargar de localStorage:", error);
+  }
+  return null;
+};
+
+const limpiarStorage = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY_METADATA);
+  } catch (error) {
+    console.error("Error al limpiar localStorage:", error);
+  }
+};
+
+const hayDatosEnStorage = () => {
+  return localStorage.getItem(STORAGE_KEY) !== null;
+};
 
 export default function useProgramacionModulo() {
   const { carrerasConPensum, fetchCarrerasConPensum } = usePensumStore();
@@ -22,7 +102,27 @@ export default function useProgramacionModulo() {
   const [moduloActual, setModuloActual] = useState(0); // Módulo en el que se está trabajando
   // Estructura: { modulo: { materiaId: [grupos] } }
   // Cada grupo: { id, horario, estudiantes: [{id_estudiante, registro, nombre, horario_preferido}] }
-  const [grupos, setGrupos] = useState({});
+  const [grupos, setGrupos] = useState(() => {
+    // Cargar grupos del localStorage al inicializar
+    const datosStorage = cargarGruposDeStorage();
+    if (datosStorage) {
+      return datosStorage.grupos;
+    }
+    return {};
+  });
+  
+  // Estado para metadata (carrera, pensum, gestión)
+  const [metadataStorage, setMetadataStorage] = useState(() => {
+    const datosStorage = cargarGruposDeStorage();
+    if (datosStorage) {
+      return datosStorage.metadata;
+    }
+    return null;
+  });
+  
+  // Flag para controlar si se deben restaurar grupos desde localStorage
+  const [debeRestaurarGrupos, setDebeRestaurarGrupos] = useState(false);
+  const [gruposParaRestaurar, setGruposParaRestaurar] = useState(null);
 
   // Generar opciones de carrera/pensum
   const options = useMemo(() => {
@@ -57,11 +157,46 @@ export default function useProgramacionModulo() {
       }
 
       const result = await response.json();
+      
+      // Verificar si hay datos en localStorage con la misma carrera/pensum/gestión
+      const datosStorage = cargarGruposDeStorage();
+      const nuevaMetadata = {
+        nombreCarrera: selectedCarrera.nombreCarrera,
+        numeroPensum: selectedCarrera.numeroPensum,
+        gestion: gestion,
+        modulosMaximos: modulosMaximos,
+      };
+      
+      // Primero establecer los datos
       setData(result);
-      // Inicializar grupos vacíos
-      setGrupos({});
+      setMetadataStorage(nuevaMetadata);
+      
+      if (datosStorage && datosStorage.metadata) {
+        const metadata = datosStorage.metadata;
+        const mismaConfiguracion = 
+          metadata.nombreCarrera === selectedCarrera.nombreCarrera &&
+          metadata.numeroPensum === selectedCarrera.numeroPensum &&
+          metadata.gestion === gestion;
+        
+        if (mismaConfiguracion && datosStorage.grupos) {
+          // Marcar que se deben restaurar grupos después de que los datos estén listos
+          setDebeRestaurarGrupos(true);
+          setGruposParaRestaurar(datosStorage.grupos);
+          toast.success("Datos cargados correctamente. Grupos restaurados del almacenamiento local.");
+        } else {
+          // Limpiar grupos si la configuración es diferente
+          setGrupos({});
+          guardarGruposEnStorage({}, nuevaMetadata);
+          limpiarStorage();
+          toast.success("Datos cargados correctamente. Configuración diferente detectada, grupos limpiados.");
+        }
+      } else {
+        // No hay datos en storage, inicializar grupos vacíos
+        setGrupos({});
+        guardarGruposEnStorage({}, nuevaMetadata);
+      }
+      
       setModuloActual(0);
-      toast.success("Datos cargados correctamente");
     } catch (error) {
       console.error("Error al cargar datos:", error);
       toast.error("Error al cargar los datos de planificación");
@@ -96,12 +231,27 @@ export default function useProgramacionModulo() {
     return h1.inicio < h2.fin && h2.inicio < h1.fin;
   }, []);
 
-  // Verificar si un estudiante tiene conflicto de horario con otros grupos
+  // Verificar si un estudiante tiene conflicto de horario y/o módulos con otros grupos
   const tieneConflictoHorario = useCallback(
-    (idEstudiante, horarioGrupo, materiaIdActual, grupoIdExcluir = null) => {
+    (idEstudiante, horarioGrupo, materiaIdActual, grupoIdExcluir = null, moduloActualGrupo = null, siglaMateriaActual = null) => {
       // Buscar en todos los módulos y materias
       for (const [modulo, materias] of Object.entries(grupos)) {
+        const moduloNum = parseInt(modulo);
         for (const [matId, gruposMateria] of Object.entries(materias)) {
+          // Obtener sigla de la materia actual si no se proporciona
+          let siglaActual = siglaMateriaActual;
+          if (!siglaActual && data?.resumen_demanda) {
+            const materia = data.resumen_demanda.find((m) => m.id_materia === materiaIdActual);
+            siglaActual = materia?.sigla;
+          }
+          
+          // Obtener sigla de la materia del grupo existente
+          let siglaExistente = null;
+          if (data?.resumen_demanda) {
+            const materiaExistente = data.resumen_demanda.find((m) => m.id_materia === matId);
+            siglaExistente = materiaExistente?.sigla;
+          }
+          
           for (const grupo of gruposMateria) {
             // Excluir el grupo actual si se está editando
             if (grupoIdExcluir && grupo.id === grupoIdExcluir) continue;
@@ -112,14 +262,36 @@ export default function useProgramacionModulo() {
             );
             
             if (estaEnGrupo && grupo.horario) {
-              // Verificar solapamiento de horarios
-              if (horariosSolapan(horarioGrupo, grupo.horario)) {
+              // Obtener módulos ocupados por el grupo existente
+              const modulosGrupoExistente = obtenerModulosOcupados(siglaExistente || "", moduloNum);
+              
+              // Obtener módulos ocupados por el grupo actual (si se proporciona)
+              let modulosGrupoActual = [moduloActualGrupo];
+              if (moduloActualGrupo !== null && siglaActual) {
+                modulosGrupoActual = obtenerModulosOcupados(siglaActual, moduloActualGrupo);
+              }
+              
+              // Verificar solapamiento de módulos (si se proporciona moduloActualGrupo)
+              if (moduloActualGrupo !== null && modulosSolapan(modulosGrupoActual, modulosGrupoExistente)) {
                 return {
                   conflicto: true,
-                  modulo: parseInt(modulo),
+                  modulo: moduloNum,
                   materiaId: matId,
                   grupoCodigo: grupo.codigo,
                   horarioConflicto: grupo.horario,
+                  tipoConflicto: "modulo",
+                };
+              }
+              
+              // Verificar solapamiento de horarios (solo si no hay conflicto de módulo ya detectado)
+              if (horariosSolapan(horarioGrupo, grupo.horario)) {
+                return {
+                  conflicto: true,
+                  modulo: moduloNum,
+                  materiaId: matId,
+                  grupoCodigo: grupo.codigo,
+                  horarioConflicto: grupo.horario,
+                  tipoConflicto: "horario",
                 };
               }
             }
@@ -128,7 +300,7 @@ export default function useProgramacionModulo() {
       }
       return { conflicto: false };
     },
-    [grupos, horariosSolapan]
+    [grupos, horariosSolapan, data]
   );
 
   // Obtener estudiantes disponibles para una materia en el módulo actual
@@ -188,21 +360,29 @@ export default function useProgramacionModulo() {
         const idEstudiante = est.id_estudiante.toString();
         const enMismaMateria = estudiantesEnMismaMateria.get(idEstudiante);
         
-        // Verificar conflicto de horario si hay horario del grupo
+        // Verificar conflicto de horario y módulos si hay horario del grupo
         let conflictoHorario = null;
         if (horarioGrupo && !enMismaMateria) {
+          // Obtener sigla de la materia
+          const siglaMateria = materia?.sigla || null;
           const conflicto = tieneConflictoHorario(
             idEstudiante,
             horarioGrupo,
             materiaId,
-            grupoIdExcluir
+            grupoIdExcluir,
+            moduloActual,
+            siglaMateria
           );
           if (conflicto.conflicto) {
+            const tipoConflicto = conflicto.tipoConflicto || "horario";
+            const mensajeConflicto = tipoConflicto === "modulo" 
+              ? `Conflicto de módulo (materia bimodular) con M${conflicto.modulo}-${conflicto.grupoCodigo} (${conflicto.horarioConflicto})`
+              : `Conflicto de horario con M${conflicto.modulo}-${conflicto.grupoCodigo} (${conflicto.horarioConflicto})`;
             conflictoHorario = {
               modulo: conflicto.modulo,
               codigoGrupo: conflicto.grupoCodigo,
               horario: conflicto.horarioConflicto,
-              razon: `Conflicto de horario con M${conflicto.modulo}-${conflicto.grupoCodigo} (${conflicto.horarioConflicto})`,
+              razon: mensajeConflicto,
             };
           }
         }
@@ -256,7 +436,11 @@ export default function useProgramacionModulo() {
           return; // Saltar validación para estos estudiantes
         }
 
-        const conflicto = tieneConflictoHorario(idEstudiante, horario, materiaId);
+        // Obtener sigla de la materia
+        const materiaActual = data.resumen_demanda?.find((m) => m.id_materia === materiaId);
+        const siglaMateria = materiaActual?.sigla || null;
+
+        const conflicto = tieneConflictoHorario(idEstudiante, horario, materiaId, null, moduloActual, siglaMateria);
         if (conflicto.conflicto) {
           estudiantesConConflicto.push({
             id: idEstudiante,
@@ -267,9 +451,11 @@ export default function useProgramacionModulo() {
 
       if (estudiantesConConflicto.length > 0) {
         const primerConflicto = estudiantesConConflicto[0].conflicto;
-        toast.error(
-          `${estudiantesConConflicto.length} estudiante(s) tienen conflicto de horario. Ejemplo: conflicto con M${primerConflicto.modulo}-${primerConflicto.grupoCodigo} (${primerConflicto.horarioConflicto})`
-        );
+        const tipoConflicto = primerConflicto.tipoConflicto || "horario";
+        const mensajeError = tipoConflicto === "modulo"
+          ? `${estudiantesConConflicto.length} estudiante(s) tienen conflicto de módulo (materia bimodular). Ejemplo: conflicto con M${primerConflicto.modulo}-${primerConflicto.grupoCodigo} (${primerConflicto.horarioConflicto})`
+          : `${estudiantesConConflicto.length} estudiante(s) tienen conflicto de horario. Ejemplo: conflicto con M${primerConflicto.modulo}-${primerConflicto.grupoCodigo} (${primerConflicto.horarioConflicto})`;
+        toast.error(mensajeError);
         return;
       }
 
@@ -406,7 +592,11 @@ export default function useProgramacionModulo() {
           return; // Saltar validación para estos estudiantes
         }
 
-        const conflicto = tieneConflictoHorario(idEstudiante, horarioAGuardar, materiaId, grupoId);
+        // Obtener sigla de la materia
+        const materiaActual = data.resumen_demanda?.find((m) => m.id_materia === materiaId);
+        const siglaMateria = materiaActual?.sigla || null;
+
+        const conflicto = tieneConflictoHorario(idEstudiante, horarioAGuardar, materiaId, grupoId, moduloActual, siglaMateria);
         if (conflicto.conflicto) {
           estudiantesConConflicto.push({
             id: idEstudiante,
@@ -417,9 +607,11 @@ export default function useProgramacionModulo() {
 
       if (estudiantesConConflicto.length > 0) {
         const primerConflicto = estudiantesConConflicto[0].conflicto;
-        toast.error(
-          `${estudiantesConConflicto.length} estudiante(s) tienen conflicto de horario. Ejemplo: conflicto con M${primerConflicto.modulo}-${primerConflicto.grupoCodigo} (${primerConflicto.horarioConflicto})`
-        );
+        const tipoConflicto = primerConflicto.tipoConflicto || "horario";
+        const mensajeError = tipoConflicto === "modulo"
+          ? `${estudiantesConConflicto.length} estudiante(s) tienen conflicto de módulo (materia bimodular). Ejemplo: conflicto con M${primerConflicto.modulo}-${primerConflicto.grupoCodigo} (${primerConflicto.horarioConflicto})`
+          : `${estudiantesConConflicto.length} estudiante(s) tienen conflicto de horario. Ejemplo: conflicto con M${primerConflicto.modulo}-${primerConflicto.grupoCodigo} (${primerConflicto.horarioConflicto})`;
+        toast.error(mensajeError);
         return;
       }
 
@@ -461,6 +653,35 @@ export default function useProgramacionModulo() {
     },
     [moduloActual, data, grupos, tieneConflictoHorario]
   );
+
+  // Restaurar grupos desde localStorage cuando los datos estén listos
+  useEffect(() => {
+    if (debeRestaurarGrupos && gruposParaRestaurar && data && metadataStorage) {
+      // Crear una copia profunda para forzar la actualización y asegurar que React detecte el cambio
+      const gruposRestaurados = JSON.parse(JSON.stringify(gruposParaRestaurar));
+      // Usar una función de actualización para asegurar que se actualice correctamente
+      setGrupos(() => gruposRestaurados);
+      guardarGruposEnStorage(gruposRestaurados, metadataStorage);
+      setDebeRestaurarGrupos(false);
+      setGruposParaRestaurar(null);
+    }
+  }, [debeRestaurarGrupos, gruposParaRestaurar, data, metadataStorage]);
+
+  // Guardar grupos en localStorage cuando cambien
+  useEffect(() => {
+    if (metadataStorage && data && !debeRestaurarGrupos) {
+      // Solo guardar si ya hay datos cargados y no estamos restaurando
+      guardarGruposEnStorage(grupos, metadataStorage);
+    }
+  }, [grupos, metadataStorage, data, debeRestaurarGrupos]);
+
+  // Función para limpiar datos del localStorage
+  const limpiarDatosStorage = useCallback(() => {
+    limpiarStorage();
+    setGrupos({});
+    setMetadataStorage(null);
+    toast.success("Datos del almacenamiento local limpiados");
+  }, []);
 
   // Obtener grupos de una materia en el módulo actual
   const getGruposMateria = useCallback(
@@ -645,5 +866,8 @@ export default function useProgramacionModulo() {
     generarDatosExcel,
     options,
     fetchCarrerasConPensum,
+    limpiarDatosStorage,
+    hayDatosEnStorage: hayDatosEnStorage(),
+    metadataStorage,
   };
 }
