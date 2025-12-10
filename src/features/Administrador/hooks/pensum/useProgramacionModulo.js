@@ -70,10 +70,71 @@ export default function useProgramacionModulo() {
     }
   }, [selectedCarrera, gestion, modulosMaximos]);
 
+  // Función para verificar solapamiento de horarios
+  const horariosSolapan = useCallback((horario1, horario2) => {
+    if (!horario1 || !horario2) return false;
+    
+    // Parsear horarios (formato: "HH:MM-HH:MM")
+    const parseHorario = (h) => {
+      const [inicio, fin] = h.split('-');
+      if (!inicio || !fin) return null;
+      const [h1, m1] = inicio.split(':').map(Number);
+      const [h2, m2] = fin.split(':').map(Number);
+      if (isNaN(h1) || isNaN(m1) || isNaN(h2) || isNaN(m2)) return null;
+      return {
+        inicio: h1 * 60 + m1, // Convertir a minutos desde medianoche
+        fin: h2 * 60 + m2
+      };
+    };
+
+    const h1 = parseHorario(horario1);
+    const h2 = parseHorario(horario2);
+    
+    if (!h1 || !h2) return false;
+    
+    // Verificar solapamiento: h1.inicio < h2.fin && h2.inicio < h1.fin
+    return h1.inicio < h2.fin && h2.inicio < h1.fin;
+  }, []);
+
+  // Verificar si un estudiante tiene conflicto de horario con otros grupos
+  const tieneConflictoHorario = useCallback(
+    (idEstudiante, horarioGrupo, materiaIdActual, grupoIdExcluir = null) => {
+      // Buscar en todos los módulos y materias
+      for (const [modulo, materias] of Object.entries(grupos)) {
+        for (const [matId, gruposMateria] of Object.entries(materias)) {
+          for (const grupo of gruposMateria) {
+            // Excluir el grupo actual si se está editando
+            if (grupoIdExcluir && grupo.id === grupoIdExcluir) continue;
+            
+            // Verificar si el estudiante está en este grupo
+            const estaEnGrupo = grupo.estudiantes?.some(
+              (est) => est.id_estudiante.toString() === idEstudiante.toString()
+            );
+            
+            if (estaEnGrupo && grupo.horario) {
+              // Verificar solapamiento de horarios
+              if (horariosSolapan(horarioGrupo, grupo.horario)) {
+                return {
+                  conflicto: true,
+                  modulo: parseInt(modulo),
+                  materiaId: matId,
+                  grupoCodigo: grupo.codigo,
+                  horarioConflicto: grupo.horario,
+                };
+              }
+            }
+          }
+        }
+      }
+      return { conflicto: false };
+    },
+    [grupos, horariosSolapan]
+  );
+
   // Obtener estudiantes disponibles para una materia en el módulo actual
-  // (estudiantes que no están en ningún grupo del módulo actual)
+  // Retorna todos los estudiantes con información sobre disponibilidad y razones de bloqueo
   const getEstudiantesDisponibles = useCallback(
-    (materiaId) => {
+    (materiaId, horarioGrupo = null, grupoIdExcluir = null) => {
       if (!data?.resumen_demanda) return [];
 
       const materia = data.resumen_demanda.find((m) => m.id_materia === materiaId);
@@ -91,22 +152,77 @@ export default function useProgramacionModulo() {
         });
       });
 
-      // Obtener estudiantes ya asignados a grupos en el módulo actual
-      const gruposModuloActual = grupos[moduloActual] || {};
-      const gruposMateria = gruposModuloActual[materiaId] || [];
-      const estudiantesEnGrupos = new Set();
-      gruposMateria.forEach((grupo) => {
-        grupo.estudiantes?.forEach((est) => {
-          estudiantesEnGrupos.add(est.id_estudiante.toString());
+      // Obtener información de estudiantes ya asignados a grupos de la MISMA materia en CUALQUIER módulo
+      // IMPORTANTE: Si un estudiante está en un grupo de esta materia en CUALQUIER módulo,
+      // debe aparecer pero marcado como NO disponible (deshabilitado) para que el usuario lo vea
+      const estudiantesEnMismaMateria = new Map(); // Map para guardar información del grupo
+      
+      Object.entries(grupos).forEach(([modulo, materias]) => {
+        const moduloNum = parseInt(modulo);
+        const gruposMateria = materias[materiaId] || [];
+        gruposMateria.forEach((grupo) => {
+          // Excluir el grupo actual si se está editando
+          if (grupoIdExcluir && grupo.id === grupoIdExcluir) return;
+          
+          grupo.estudiantes?.forEach((est) => {
+            // Asegurar que el ID se obtiene correctamente
+            const idEst = est.id_estudiante ? est.id_estudiante.toString() : null;
+            if (!idEst) return; // Saltar si no hay ID válido
+            
+            // Guardar información para mostrar (si no está ya guardado)
+            if (!estudiantesEnMismaMateria.has(idEst)) {
+              estudiantesEnMismaMateria.set(idEst, {
+                modulo: moduloNum,
+                codigoGrupo: grupo.codigo,
+                horario: grupo.horario,
+                razon: `Ya está en esta materia (M${modulo}-${grupo.codigo}) en horario ${grupo.horario}`,
+              });
+            }
+          });
         });
       });
 
-      // Filtrar estudiantes disponibles
-      return todosEstudiantes.filter(
-        (est) => !estudiantesEnGrupos.has(est.id_estudiante.toString())
-      );
+      // NO filtrar estudiantes - mostrar TODOS pero marcar los que ya están en grupos como no disponibles
+      // Mapear todos los estudiantes con información de disponibilidad
+      return todosEstudiantes.map((est) => {
+        const idEstudiante = est.id_estudiante.toString();
+        const enMismaMateria = estudiantesEnMismaMateria.get(idEstudiante);
+        
+        // Verificar conflicto de horario si hay horario del grupo
+        let conflictoHorario = null;
+        if (horarioGrupo && !enMismaMateria) {
+          const conflicto = tieneConflictoHorario(
+            idEstudiante,
+            horarioGrupo,
+            materiaId,
+            grupoIdExcluir
+          );
+          if (conflicto.conflicto) {
+            conflictoHorario = {
+              modulo: conflicto.modulo,
+              codigoGrupo: conflicto.grupoCodigo,
+              horario: conflicto.horarioConflicto,
+              razon: `Conflicto de horario con M${conflicto.modulo}-${conflicto.grupoCodigo} (${conflicto.horarioConflicto})`,
+            };
+          }
+        }
+
+        const disponible = !enMismaMateria && !conflictoHorario;
+        const razonBloqueo = enMismaMateria 
+          ? enMismaMateria.razon 
+          : conflictoHorario 
+            ? conflictoHorario.razon 
+            : null;
+
+        return {
+          ...est,
+          disponible,
+          razonBloqueo,
+          infoBloqueo: enMismaMateria || conflictoHorario,
+        };
+      });
     },
-    [data, grupos, moduloActual]
+    [data, grupos, moduloActual, tieneConflictoHorario]
   );
 
   // Crear un nuevo grupo
@@ -114,6 +230,46 @@ export default function useProgramacionModulo() {
     (materiaId, horario, estudiantesIds, limiteMaximo = null) => {
       if (!materiaId || !horario || !estudiantesIds || estudiantesIds.length === 0) {
         toast.error("Debe seleccionar al menos un estudiante");
+        return;
+      }
+
+      // Validar que los estudiantes no tengan conflictos de horario
+      // EXCEPCIÓN: Estudiantes con horario "15:00-19:00" o "EX.SUFIC." se asignan automáticamente
+      const estudiantesConConflicto = [];
+      estudiantesIds.forEach((idEstudiante) => {
+        // Obtener el horario preferido del estudiante
+        let horarioPreferidoEstudiante = null;
+        data.resumen_demanda?.forEach((materia) => {
+          if (materia.id_materia === materiaId) {
+            materia.preferencias_horario?.forEach((pref) => {
+              pref.estudiantes?.forEach((est) => {
+                if (est.id_estudiante.toString() === idEstudiante) {
+                  horarioPreferidoEstudiante = est.horario_preferido || pref.horario;
+                }
+              });
+            });
+          }
+        });
+
+        // Si el estudiante tiene horario "15:00-19:00" o "EX.SUFIC.", permitirlo (se asignará al horario del grupo)
+        if (horarioPreferidoEstudiante === "15:00-19:00" || horarioPreferidoEstudiante === "EX.SUFIC.") {
+          return; // Saltar validación para estos estudiantes
+        }
+
+        const conflicto = tieneConflictoHorario(idEstudiante, horario, materiaId);
+        if (conflicto.conflicto) {
+          estudiantesConConflicto.push({
+            id: idEstudiante,
+            conflicto,
+          });
+        }
+      });
+
+      if (estudiantesConConflicto.length > 0) {
+        const primerConflicto = estudiantesConConflicto[0].conflicto;
+        toast.error(
+          `${estudiantesConConflicto.length} estudiante(s) tienen conflicto de horario. Ejemplo: conflicto con M${primerConflicto.modulo}-${primerConflicto.grupoCodigo} (${primerConflicto.horarioConflicto})`
+        );
         return;
       }
 
@@ -149,6 +305,24 @@ export default function useProgramacionModulo() {
           nuevo[moduloActual][materiaId] = [];
         }
 
+        // Verificar que no exista un grupo idéntico (mismo horario y mismos estudiantes)
+        const existeGrupoDuplicado = nuevo[moduloActual][materiaId].some((g) => {
+          if (g.horario !== horario) return false;
+          const estudiantesIdsGrupo = new Set(
+            g.estudiantes?.map((e) => e.id_estudiante.toString()) || []
+          );
+          const estudiantesIdsNuevo = new Set(
+            estudiantesCompletos.map((e) => e.id_estudiante.toString())
+          );
+          if (estudiantesIdsGrupo.size !== estudiantesIdsNuevo.size) return false;
+          return [...estudiantesIdsGrupo].every((id) => estudiantesIdsNuevo.has(id));
+        });
+
+        if (existeGrupoDuplicado) {
+          toast.error("Ya existe un grupo con el mismo horario y los mismos estudiantes");
+          return prev; // No hacer cambios
+        }
+
         // Generar código único de 3 dígitos
         let codigo = generarCodigoGrupo();
         // Verificar que el código no exista en ningún módulo
@@ -178,7 +352,7 @@ export default function useProgramacionModulo() {
 
       toast.success(`Grupo creado con ${estudiantesCompletos.length} estudiantes`);
     },
-    [moduloActual, data]
+    [moduloActual, data, tieneConflictoHorario]
   );
 
   // Eliminar un grupo
@@ -201,6 +375,54 @@ export default function useProgramacionModulo() {
   // Editar un grupo (agregar o quitar estudiantes y/o cambiar horario)
   const editarGrupo = useCallback(
     (materiaId, grupoId, estudiantesIds, nuevoHorario = null, limiteMaximo = null) => {
+      // Obtener el horario a usar (nuevo o el actual)
+      const horarioAGuardar = nuevoHorario || grupos[moduloActual]?.[materiaId]?.find((g) => g.id === grupoId)?.horario;
+      
+      if (!horarioAGuardar) {
+        toast.error("El grupo debe tener un horario");
+        return;
+      }
+
+      // Validar que los estudiantes no tengan conflictos de horario
+      // EXCEPCIÓN: Estudiantes con horario "15:00-19:00" o "EX.SUFIC." se asignan automáticamente
+      const estudiantesConConflicto = [];
+      estudiantesIds.forEach((idEstudiante) => {
+        // Obtener el horario preferido del estudiante
+        let horarioPreferidoEstudiante = null;
+        data.resumen_demanda?.forEach((materia) => {
+          if (materia.id_materia === materiaId) {
+            materia.preferencias_horario?.forEach((pref) => {
+              pref.estudiantes?.forEach((est) => {
+                if (est.id_estudiante.toString() === idEstudiante) {
+                  horarioPreferidoEstudiante = est.horario_preferido || pref.horario;
+                }
+              });
+            });
+          }
+        });
+
+        // Si el estudiante tiene horario "15:00-19:00" o "EX.SUFIC.", permitirlo (se asignará al horario del grupo)
+        if (horarioPreferidoEstudiante === "15:00-19:00" || horarioPreferidoEstudiante === "EX.SUFIC.") {
+          return; // Saltar validación para estos estudiantes
+        }
+
+        const conflicto = tieneConflictoHorario(idEstudiante, horarioAGuardar, materiaId, grupoId);
+        if (conflicto.conflicto) {
+          estudiantesConConflicto.push({
+            id: idEstudiante,
+            conflicto,
+          });
+        }
+      });
+
+      if (estudiantesConConflicto.length > 0) {
+        const primerConflicto = estudiantesConConflicto[0].conflicto;
+        toast.error(
+          `${estudiantesConConflicto.length} estudiante(s) tienen conflicto de horario. Ejemplo: conflicto con M${primerConflicto.modulo}-${primerConflicto.grupoCodigo} (${primerConflicto.horarioConflicto})`
+        );
+        return;
+      }
+
       setGrupos((prev) => {
         const nuevo = { ...prev };
         if (!nuevo[moduloActual]?.[materiaId]) return nuevo;
@@ -229,7 +451,7 @@ export default function useProgramacionModulo() {
         nuevo[moduloActual][materiaId][grupoIndex] = {
           ...nuevo[moduloActual][materiaId][grupoIndex],
           estudiantes: estudiantesCompletos,
-          horario: nuevoHorario || nuevo[moduloActual][materiaId][grupoIndex].horario,
+          horario: horarioAGuardar,
           limiteMaximo: limiteMaximo !== null ? limiteMaximo : nuevo[moduloActual][materiaId][grupoIndex].limiteMaximo,
         };
 
@@ -237,7 +459,7 @@ export default function useProgramacionModulo() {
       });
       toast.success("Grupo actualizado");
     },
-    [moduloActual, data]
+    [moduloActual, data, grupos, tieneConflictoHorario]
   );
 
   // Obtener grupos de una materia en el módulo actual

@@ -33,7 +33,6 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
     setModulosMaximos,
     moduloActual,
     cambiarModulo,
-    grupos,
     cargarDatos,
     crearGrupo,
     eliminarGrupo,
@@ -115,7 +114,7 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
   };
 
   // Cerrar modal
-  const cerrarModalCrearGrupo = () => {
+  const cerrarModalCrearGrupo = useCallback(() => {
     setModalCrearGrupo({
       visible: false,
       materiaId: null,
@@ -127,29 +126,37 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
       grupoId: null,
       limiteMaximo: null,
     });
-  };
+  }, []);
 
   // Obtener estudiantes disponibles para el modal
   const estudiantesDisponiblesModal = useMemo(() => {
     if (!modalCrearGrupo.materiaId) return [];
-    let estudiantes = getEstudiantesDisponibles(modalCrearGrupo.materiaId);
+    // Pasar el horario seleccionado para filtrar conflictos de horario
+    let estudiantes = getEstudiantesDisponibles(
+      modalCrearGrupo.materiaId,
+      modalCrearGrupo.horarioSeleccionado,
+      modalCrearGrupo.grupoId
+    );
     
-    // Si estamos editando, incluir los estudiantes del grupo actual
+    // Si estamos editando, marcar los estudiantes del grupo actual como disponibles
     if (modalCrearGrupo.modo === "editar" && modalCrearGrupo.grupoId) {
       const gruposMateria = getGruposMateria(modalCrearGrupo.materiaId);
       const grupoActual = gruposMateria.find((g) => g.id === modalCrearGrupo.grupoId);
       if (grupoActual && grupoActual.estudiantes) {
-        // Agregar estudiantes del grupo actual a la lista disponible
-        const estudiantesGrupo = grupoActual.estudiantes.map((est) => ({
-          ...est,
-          horario_preferido: est.horario_preferido || est.horario_original,
-        }));
-        // Combinar y eliminar duplicados
-        const estudiantesIds = new Set(estudiantes.map((e) => e.id_estudiante.toString()));
-        estudiantesGrupo.forEach((est) => {
-          if (!estudiantesIds.has(est.id_estudiante.toString())) {
-            estudiantes.push(est);
+        // Marcar estudiantes del grupo actual como disponibles
+        const estudiantesIdsGrupo = new Set(
+          grupoActual.estudiantes.map((e) => e.id_estudiante.toString())
+        );
+        estudiantes = estudiantes.map((est) => {
+          if (estudiantesIdsGrupo.has(est.id_estudiante.toString())) {
+            return {
+              ...est,
+              disponible: true,
+              razonBloqueo: null,
+              infoBloqueo: null,
+            };
           }
+          return est;
         });
       }
     }
@@ -162,16 +169,19 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
     }
     
     return estudiantes;
-  }, [modalCrearGrupo.materiaId, modalCrearGrupo.horariosSeleccionados, modalCrearGrupo.modo, modalCrearGrupo.grupoId, getEstudiantesDisponibles, getGruposMateria]);
+  }, [modalCrearGrupo.materiaId, modalCrearGrupo.horariosSeleccionados, modalCrearGrupo.modo, modalCrearGrupo.grupoId, modalCrearGrupo.horarioSeleccionado, getEstudiantesDisponibles, getGruposMateria]);
 
-  // Obtener horarios únicos de estudiantes disponibles
+  // Obtener horarios únicos de estudiantes disponibles (excluyendo 15:00-19:00 y EX.SUFIC.)
   const horariosDisponibles = useMemo(() => {
     if (!modalCrearGrupo.materiaId) return [];
     const estudiantes = getEstudiantesDisponibles(modalCrearGrupo.materiaId);
     const horariosSet = new Set();
     estudiantes.forEach((est) => {
       const horario = est.horario_original || est.horario_preferido;
-      if (horario) horariosSet.add(horario);
+      // TEMPORAL: Filtrar horarios no permitidos
+      if (horario && horario !== "15:00-19:00" && horario !== "EX.SUFIC.") {
+        horariosSet.add(horario);
+      }
     });
     return Array.from(horariosSet).sort();
   }, [modalCrearGrupo.materiaId, getEstudiantesDisponibles]);
@@ -179,12 +189,32 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
   // Toggle selección de estudiante
   const toggleEstudiante = (idEstudiante) => {
     setModalCrearGrupo((prev) => {
+      // Si no hay horario seleccionado, no permitir seleccionar
+      if (!prev.horarioSeleccionado) {
+        toast.error("Debe seleccionar un horario para el grupo primero");
+        return prev;
+      }
+
+      // Verificar si el estudiante está disponible
+      const estudiante = estudiantesDisponiblesModal.find(
+        (e) => e.id_estudiante.toString() === idEstudiante
+      );
+      if (!estudiante) {
+        toast.error("Estudiante no encontrado");
+        return prev;
+      }
+
       const estudiantes = [...prev.estudiantesSeleccionados];
       const index = estudiantes.indexOf(idEstudiante);
       if (index > -1) {
         // Deseleccionar
         estudiantes.splice(index, 1);
       } else {
+        // Validar que el estudiante esté disponible
+        if (estudiante.disponible === false) {
+          toast.error(estudiante.razonBloqueo || "Este estudiante no está disponible para seleccionar");
+          return prev;
+        }
         // Validar límite máximo si está definido
         if (prev.limiteMaximo) {
           if (estudiantes.length >= prev.limiteMaximo) {
@@ -202,11 +232,21 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
   // Toggle selección de horario
   const toggleHorario = useCallback((horario) => {
     setModalCrearGrupo((prev) => {
+      // Si no hay horario del grupo seleccionado, no permitir seleccionar por horarios
+      if (!prev.horarioSeleccionado) {
+        toast.error("Debe seleccionar primero el horario del grupo");
+        return prev;
+      }
+
       const horarios = [...prev.horariosSeleccionados];
       const index = horarios.indexOf(horario);
       
-      // Obtener TODOS los estudiantes disponibles (sin filtrar por horarios)
-      const todosEstudiantesDisponibles = getEstudiantesDisponibles(prev.materiaId);
+      // Obtener estudiantes disponibles considerando el horario del grupo (para filtrar conflictos)
+      const todosEstudiantesDisponibles = getEstudiantesDisponibles(
+        prev.materiaId,
+        prev.horarioSeleccionado,
+        prev.grupoId
+      );
       
       if (index > -1) {
         // Deseleccionar horario
@@ -220,9 +260,12 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
       } else {
         // Seleccionar horario
         horarios.push(horario);
-        // Seleccionar estudiantes de ese horario
+        // Seleccionar SOLO estudiantes disponibles de ese horario
         const estudiantesDelHorario = todosEstudiantesDisponibles
-          .filter((est) => (est.horario_original || est.horario_preferido) === horario)
+          .filter((est) => 
+            (est.horario_original || est.horario_preferido) === horario &&
+            est.disponible !== false // Solo estudiantes disponibles
+          )
           .map((est) => est.id_estudiante.toString());
         
         // Calcular cuántos estudiantes nuevos se pueden agregar
@@ -245,7 +288,7 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
           const estudiantesNuevos = [...new Set([...prev.estudiantesSeleccionados, ...estudiantesAAgregar])];
           
           if (estudiantesDisponiblesParaAgregar.length > espaciosDisponibles) {
-            toast(`Se seleccionaron ${espaciosDisponibles} de ${estudiantesDisponiblesParaAgregar.length} estudiantes del horario (límite: ${prev.limiteMaximo})`, {
+            toast(`Se seleccionaron ${espaciosDisponibles} de ${estudiantesDisponiblesParaAgregar.length} estudiantes disponibles del horario (límite: ${prev.limiteMaximo})`, {
               icon: '⚠️',
               duration: 4000,
             });
@@ -255,7 +298,7 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
           
           return { ...prev, horariosSeleccionados: horarios, estudiantesSeleccionados: estudiantesNuevos };
         } else {
-          // Sin límite, agregar todos
+          // Sin límite, agregar todos los disponibles
           const estudiantesNuevos = [...new Set([...prev.estudiantesSeleccionados, ...estudiantesDelHorario])];
           return { ...prev, horariosSeleccionados: horarios, estudiantesSeleccionados: estudiantesNuevos };
         }
@@ -264,7 +307,7 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
   }, [getEstudiantesDisponibles]);
 
   // Crear o editar grupo desde modal
-  const handleCrearGrupo = () => {
+  const handleCrearGrupo = useCallback(() => {
     if (!modalCrearGrupo.horarioSeleccionado) {
       toast.error("Debe seleccionar un horario para el grupo");
       return;
@@ -305,7 +348,7 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
       );
     }
     cerrarModalCrearGrupo();
-  };
+  }, [modalCrearGrupo, crearGrupo, editarGrupo, cerrarModalCrearGrupo]);
 
   // Descargar a Excel
   const descargarExcel = () => {
@@ -410,8 +453,8 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
                     label={`Módulo M${modulo}`}
                     className={
                       moduloActual === modulo
-                        ? "bg-red-600 hover:bg-red-700"
-                        : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                        ? "bg-red-600 hover:bg-red-700 text-white border-red-600"
+                        : "bg-gray-400 hover:bg-gray-500 text-white border-gray-400"
                     }
                     onClick={() => cambiarModulo(modulo)}
                   />
@@ -517,6 +560,7 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
         <div className="space-y-4">
           {materiasFiltradas.map((materia) => {
             const gruposMateria = getGruposMateria(materia.id_materia);
+            // Obtener estudiantes disponibles sin filtrar por horario (para mostrar todos)
             const estudiantesDisponibles = getEstudiantesDisponibles(materia.id_materia);
 
             return (
@@ -539,7 +583,7 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
                         {materia.total_estudiantes} estudiantes
                       </div>
                       <div className="text-sm text-red-100">
-                        {gruposMateria.length} grupos en M{moduloActual} | {estudiantesDisponibles.length} disponibles
+                        {gruposMateria.length} grupos en M{moduloActual} | {estudiantesDisponibles.filter(est => est.disponible !== false).length} disponibles
                       </div>
                     </div>
                     <i
@@ -664,13 +708,30 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
                                   est.id_estudiante.toString(),
                                   materia.id_materia
                                 );
+                                const disponible = est.disponible !== false;
                                 return (
                                   <tr
                                     key={est.id_estudiante}
-                                    className="border-b border-gray-200 hover:bg-gray-50"
+                                    className={`border-b border-gray-200 ${
+                                      disponible ? "hover:bg-gray-50" : "bg-gray-100 opacity-60"
+                                    }`}
+                                    title={est.razonBloqueo || undefined}
                                   >
-                                    <td className="px-3 py-2">{est.registro}</td>
-                                    <td className="px-3 py-2">{est.nombre}</td>
+                                    <td className="px-3 py-2">
+                                      <span className={!disponible ? "line-through text-gray-400" : ""}>
+                                        {est.registro}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 py-2">
+                                      <span className={!disponible ? "line-through text-gray-400" : ""}>
+                                        {est.nombre}
+                                      </span>
+                                      {!disponible && est.razonBloqueo && (
+                                        <div className="text-xs text-red-600 mt-1">
+                                           {est.razonBloqueo}
+                                        </div>
+                                      )}
+                                    </td>
                                     <td className="px-3 py-2 text-gray-600">
                                       {est.horario_preferido || est.horario_original || "-"}
                                     </td>
@@ -761,13 +822,20 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
             </label>
             <Dropdown
               value={modalCrearGrupo.horarioSeleccionado}
-              options={HORARIOS_FIJOS.map((h) => ({
-                label: `${h.label} (${h.turno}${h.extra ? ", " + h.extra : ""})`,
-                value: h.label,
-              }))}
-              onChange={(e) =>
-                setModalCrearGrupo((prev) => ({ ...prev, horarioSeleccionado: e.value }))
-              }
+              options={HORARIOS_FIJOS
+                .filter((h) => h.label !== "15:00-19:00" && h.label !== "EX.SUFIC.") // Filtrar horarios no permitidos
+                .map((h) => ({
+                  label: `${h.label} (${h.turno}${h.extra ? ", " + h.extra : ""})`,
+                  value: h.label,
+                }))}
+              onChange={(e) => {
+                setModalCrearGrupo((prev) => {
+                  // Al cambiar el horario, limpiar estudiantes seleccionados que tengan conflicto
+                  // Los estudiantes disponibles se actualizarán automáticamente por el useMemo
+                  return { ...prev, horarioSeleccionado: e.value, estudiantesSeleccionados: [] };
+                });
+                toast.info("Horario seleccionado. Los estudiantes disponibles se han actualizado.");
+              }}
               placeholder="Seleccione un horario"
               className="w-full"
             />
@@ -831,9 +899,11 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
             <div className="flex flex-wrap gap-2">
               {horariosDisponibles.map((horario) => {
                 const seleccionado = modalCrearGrupo.horariosSeleccionados.includes(horario);
-                const cantidadEstudiantes = estudiantesDisponiblesModal.filter(
+                const estudiantesDelHorario = estudiantesDisponiblesModal.filter(
                   (est) => (est.horario_original || est.horario_preferido) === horario
-                ).length;
+                );
+                const cantidadDisponibles = estudiantesDelHorario.filter((est) => est.disponible !== false).length;
+                const cantidadTotal = estudiantesDelHorario.length;
                 return (
                   <button
                     key={horario}
@@ -844,8 +914,9 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
                         ? "bg-blue-600 text-white"
                         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                     }`}
+                    title={cantidadTotal !== cantidadDisponibles ? `${cantidadDisponibles} disponibles de ${cantidadTotal} total` : undefined}
                   >
-                    {horario} ({cantidadEstudiantes})
+                    {horario} ({cantidadDisponibles}{cantidadTotal !== cantidadDisponibles ? `/${cantidadTotal}` : ""})
                   </button>
                 );
               })}
@@ -882,19 +953,25 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
                       est.id_estudiante.toString(),
                       modalCrearGrupo.materiaId
                     );
-                    // Verificar si se puede seleccionar (no está seleccionado y no se alcanzó el límite)
+                    // Verificar si se puede seleccionar
+                    const disponible = est.disponible !== false;
                     const limiteAlcanzado = modalCrearGrupo.limiteMaximo && 
                       !seleccionado && 
                       modalCrearGrupo.estudiantesSeleccionados.length >= modalCrearGrupo.limiteMaximo;
-                    const puedeSeleccionar = !limiteAlcanzado;
+                    const puedeSeleccionar = disponible && !limiteAlcanzado;
                     
                     return (
                       <tr
                         key={est.id_estudiante}
                         className={`border-b border-gray-200 ${
-                          seleccionado ? "bg-blue-50" : limiteAlcanzado ? "bg-gray-100 opacity-60" : "hover:bg-gray-50"
+                          seleccionado 
+                            ? "bg-blue-50" 
+                            : !disponible || limiteAlcanzado 
+                              ? "bg-gray-100 opacity-60" 
+                              : "hover:bg-gray-50"
                         } ${puedeSeleccionar || seleccionado ? "cursor-pointer" : "cursor-not-allowed"}`}
-                        onClick={() => puedeSeleccionar || seleccionado ? toggleEstudiante(est.id_estudiante.toString()) : null}
+                        onClick={() => (puedeSeleccionar || seleccionado) ? toggleEstudiante(est.id_estudiante.toString()) : null}
+                        title={est.razonBloqueo || undefined}
                       >
                         <td className="px-3 py-2">
                           <Checkbox
@@ -903,8 +980,21 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
                             onChange={() => toggleEstudiante(est.id_estudiante.toString())}
                           />
                         </td>
-                        <td className="px-3 py-2">{est.registro}</td>
-                        <td className="px-3 py-2">{est.nombre}</td>
+                        <td className="px-3 py-2">
+                          <span className={!disponible ? "line-through text-gray-400" : ""}>
+                            {est.registro}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className={!disponible ? "line-through text-gray-400" : ""}>
+                            {est.nombre}
+                          </span>
+                          {!disponible && est.razonBloqueo && (
+                            <div className="text-xs text-red-600 mt-1">
+                              ⚠️ {est.razonBloqueo}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-3 py-2 text-gray-600">
                           {est.horario_preferido || est.horario_original || "-"}
                         </td>
