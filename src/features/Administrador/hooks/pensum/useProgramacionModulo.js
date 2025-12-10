@@ -29,10 +29,14 @@ const esMateriaBimodular = (sigla) => {
 };
 
 // Obtener los módulos que ocupa una materia (1 módulo normal, 2 si es bimodular)
+// IMPORTANTE: Las materias bimodulares solo ocupan hacia ADELANTE (módulo actual + siguiente)
+// Ejemplo: Si está en módulo 5, ocupa módulos [5, 6], NO ocupa el módulo 4
 const obtenerModulosOcupados = (sigla, moduloInicio) => {
   if (esMateriaBimodular(sigla)) {
+    // Solo ocupa el módulo actual y el siguiente (hacia adelante)
     return [moduloInicio, moduloInicio + 1];
   }
+  // Materia normal: solo ocupa el módulo actual
   return [moduloInicio];
 };
 
@@ -272,28 +276,32 @@ export default function useProgramacionModulo() {
               }
               
               // Verificar solapamiento de módulos (si se proporciona moduloActualGrupo)
-              if (moduloActualGrupo !== null && modulosSolapan(modulosGrupoActual, modulosGrupoExistente)) {
-                return {
-                  conflicto: true,
-                  modulo: moduloNum,
-                  materiaId: matId,
-                  grupoCodigo: grupo.codigo,
-                  horarioConflicto: grupo.horario,
-                  tipoConflicto: "modulo",
-                };
+              if (moduloActualGrupo !== null) {
+                const haySolapamientoModulos = modulosSolapan(modulosGrupoActual, modulosGrupoExistente);
+                
+                if (haySolapamientoModulos) {
+                  // Si hay solapamiento de módulos, verificar también horarios
+                  // Solo hay conflicto si TAMBIÉN hay solapamiento de horarios
+                  if (horariosSolapan(horarioGrupo, grupo.horario)) {
+                    return {
+                      conflicto: true,
+                      modulo: moduloNum,
+                      materiaId: matId,
+                      grupoCodigo: grupo.codigo,
+                      horarioConflicto: grupo.horario,
+                      tipoConflicto: "modulo",
+                    };
+                  }
+                  // Si hay solapamiento de módulos pero NO de horarios, no hay conflicto
+                  // (permitir diferentes horarios en el mismo módulo)
+                }
+                // Si NO hay solapamiento de módulos, NO hay conflicto (no retornar nada)
+                // (permitir que un estudiante esté en diferentes materias en diferentes módulos,
+                // incluso con el mismo horario)
+                // CONTINUAR con el siguiente grupo sin retornar conflicto
               }
-              
-              // Verificar solapamiento de horarios (solo si no hay conflicto de módulo ya detectado)
-              if (horariosSolapan(horarioGrupo, grupo.horario)) {
-                return {
-                  conflicto: true,
-                  modulo: moduloNum,
-                  materiaId: matId,
-                  grupoCodigo: grupo.codigo,
-                  horarioConflicto: grupo.horario,
-                  tipoConflicto: "horario",
-                };
-              }
+              // Si no se proporciona moduloActualGrupo, no verificar conflictos
+              // (esto solo debería pasar en casos especiales donde no se está creando un grupo)
             }
           }
         }
@@ -725,7 +733,9 @@ export default function useProgramacionModulo() {
   // Cambiar módulo actual (reinicia la vista pero mantiene los grupos)
   const cambiarModulo = useCallback((nuevoModulo) => {
     setModuloActual(nuevoModulo);
-    toast.info(`Trabajando en Módulo M${nuevoModulo}`);
+    // Notificación simple - usar solo toast() básico
+    // Temporalmente comentado para evitar errores de caché
+    // toast(`Módulo M${nuevoModulo} seleccionado`, { icon: 'ℹ️', duration: 2000 });
   }, []);
 
   // Calcular estadísticas

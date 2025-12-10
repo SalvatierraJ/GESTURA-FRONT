@@ -486,10 +486,14 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
                     label={`Módulo M${modulo}`}
                     className={
                       moduloActual === modulo
-                        ? "bg-red-600 hover:bg-red-700 text-white border-red-600"
-                        : "bg-gray-400 hover:bg-gray-500 text-white border-gray-400"
+                        ? "bg-red-600 hover:bg-red-700 text-white border-2 border-red-800 shadow-lg font-bold"
+                        : "bg-gray-300 hover:bg-gray-400 text-gray-700 border-2 border-gray-400"
                     }
-                    onClick={() => cambiarModulo(modulo)}
+                    onClick={() => {
+                      cambiarModulo(modulo);
+                      // Scroll automático hacia arriba al cambiar de módulo
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
                   />
                 ))}
               </div>
@@ -867,7 +871,7 @@ export default function ProgramacionPorModulo({ options: optionsProp, MODULOS })
                   // Los estudiantes disponibles se actualizarán automáticamente por el useMemo
                   return { ...prev, horarioSeleccionado: e.value, estudiantesSeleccionados: [] };
                 });
-                toast.info("Horario seleccionado. Los estudiantes disponibles se han actualizado.");
+                toast("Horario seleccionado. Los estudiantes disponibles se han actualizado.", { icon: 'ℹ️', duration: 3000 });
               }}
               placeholder="Seleccione un horario"
               className="w-full"
