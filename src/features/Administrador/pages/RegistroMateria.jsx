@@ -13,6 +13,7 @@ import { Dropdown } from "primereact/dropdown";
 import ModalEditPrereqEquiv from "../components/pensum/modalPreReq";
 import { Button } from "primereact/button";
 import Simulador from "@/features/Administrador/components/pensum/SimuladorAperturaMaterias";
+import ProgramacionPorModulo from "@/features/Administrador/components/pensum/ProgramacionPorModulo";
 const SidebarContent = memo(
   ({
     materiasPorSemestre,
@@ -156,6 +157,10 @@ export default function PensumEstudiante() {
      {
       key: "simulador",
       label: "Simulador de Apertura de Materias",
+    },
+    {
+      key: "programacion-modulo",
+      label: "Programación por Módulo",
     },
     {
       key: "ajustes",
@@ -356,6 +361,13 @@ export default function PensumEstudiante() {
           MODULOS={MODULOS}
         />
 
+      )}
+
+      {activeTab === "programacion-modulo" && (
+        <ProgramacionPorModulo
+          options={options}
+          MODULOS={MODULOS}
+        />
       )}
     </ManagementLayout>
   );
