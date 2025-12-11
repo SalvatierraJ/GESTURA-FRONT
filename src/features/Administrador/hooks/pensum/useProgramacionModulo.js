@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import toast from "react-hot-toast";
 import { usePensumStore } from "@/store/materia.store";
 
-const API_BASE_URL = "https://barbara-beings-commissions-zen.trycloudflare.com";
+const API_BASE_URL = process.env.VITE_API_URL || "http://localhost:3000";
 
 // Materias bimodulares (ocupan 2 módulos consecutivos)
 const MATERIAS_BIMODULARES = [
