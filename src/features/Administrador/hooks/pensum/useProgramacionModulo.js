@@ -2,8 +2,8 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import toast from "react-hot-toast";
 import { usePensumStore } from "@/store/materia.store";
 
-const API_BASE_URL = process.env.VITE_API_URL || "http://localhost:3000";
 
+const apiUrl = import.meta.env.VITE_API_URL;
 // Materias bimodulares (ocupan 2 módulos consecutivos)
 const MATERIAS_BIMODULARES = [
   "BMS-300", // INTRODUCCIÓN A LAS MATEMÁTICAS
@@ -148,7 +148,7 @@ export default function useProgramacionModulo() {
 
     setLoading(true);
     try {
-      const url = new URL(`${API_BASE_URL}/registro-materia/planificacion-academica-avanzada`);
+      const url = new URL(`${apiUrl}/registro-materia/planificacion-academica-avanzada`);
       url.searchParams.append("carrera", selectedCarrera.nombreCarrera);
       url.searchParams.append("pensum", selectedCarrera.numeroPensum);
       url.searchParams.append("gestion", gestion);
